@@ -73,6 +73,18 @@ button:focus-visible,textarea:focus-visible{outline:2px solid white;outline-offs
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}#ambient{display:none}}
 </style>
+<style id="mobile-chat-overrides">
+.app-top{display:flex;align-items:center;gap:12px}
+.mobile-icon{display:none;align-items:center;justify-content:center;width:42px;height:42px;border:1px solid #303030;border-radius:14px;background:#111;color:#f5f5f5;font-size:22px;cursor:pointer;flex-shrink:0}
+.top-brand{min-width:0}.top-subtitle{margin-top:3px;font-size:12px;color:#999}.top-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
+.conversation{width:100%;max-width:820px;margin:12px auto 24px;display:grid;gap:24px}
+.message{max-width:100%;min-width:0}.message-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;font-size:15px}.user-message{justify-self:end;max-width:min(82%,680px);padding:12px 16px;background:#202020;border:1px solid #303030;border-radius:22px}.assistant-message{justify-self:stretch;padding:2px 0}.message-actions{display:flex;gap:8px;margin-top:10px}.message-actions button{min-height:40px;padding:7px 12px;border:1px solid #303030;border-radius:10px;background:#111;color:#aaa;font:inherit;font-size:12px;cursor:pointer}
+.suggestion-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:640px;margin:28px auto 10px}.suggestion{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;min-height:58px;padding:12px 14px;border:1px solid #303030;border-radius:16px;background:#101010;color:#ddd;font:inherit;cursor:pointer}.suggestion span{color:#777}.suggestion:hover{background:#191919}
+.drawer-scrim{position:fixed;inset:0;background:#0009;z-index:50}.history-drawer{position:fixed;z-index:51;inset:0 auto 0 0;width:min(340px,88vw);padding:16px;background:#0d0d0d;border-right:1px solid #303030;display:flex;flex-direction:column;gap:14px;transform:translateX(-105%);transition:transform .22s ease;box-shadow:20px 0 60px #0008}.history-drawer.open{transform:translateX(0)}.drawer-head,.settings-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.drawer-head strong,.settings-head strong{font-size:17px}.drawer-new{width:100%;min-height:46px;border:1px solid #333;border-radius:14px;background:#171717;color:#eee;text-align:left;padding:10px 14px;font:inherit;cursor:pointer}.history-list{overflow:auto;display:grid;gap:4px;align-content:start;flex:1}.history-row{display:flex;align-items:center;gap:6px;border-radius:10px}.history-row.active{background:#202020}.history-open{flex:1;min-width:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:12px;border:0;background:transparent;color:#ddd;font:inherit;cursor:pointer}.history-delete{width:40px;height:40px;border:0;background:transparent;color:#888;font-size:20px;cursor:pointer}.history-empty{padding:12px;color:#777;font-size:13px}.drawer-footer{border-top:1px solid #292929;padding-top:10px;display:grid;gap:5px}.drawer-footer button{min-height:44px;border:0;border-radius:10px;background:transparent;color:#bbb;text-align:left;padding:10px 12px;font:inherit;cursor:pointer}.drawer-footer button:hover{background:#1b1b1b}
+.settings-sheet{position:fixed;z-index:60;inset:auto 0 0;max-height:88dvh;overflow:auto;padding:20px 18px calc(22px + env(safe-area-inset-bottom));border:1px solid #333;border-bottom:0;border-radius:22px 22px 0 0;background:#0d0d0d;box-shadow:0 -18px 70px #000a}.settings-sheet[hidden]{display:none}.settings-head{margin-bottom:18px}
+@media(max-width:760px){body{padding-bottom:calc(20px + env(safe-area-inset-bottom))}.app{display:block}.app-top{position:sticky;top:0;z-index:15;background:#080808ed;backdrop-filter:blur(20px);margin:0 -14px;padding:8px 14px 12px}.mobile-icon{display:flex}.top-brand .eyebrow{font-size:11px;letter-spacing:.14em}.top-subtitle{font-size:11px}.top-actions .status{max-width:130px;font-size:10px}.mobile-nav{display:none!important}.content{margin:18px auto 0}#chatView.content{display:flex;flex-direction:column;min-height:calc(100dvh - 90px);margin-top:12px}#machineView,#repoView{padding-bottom:30px}.hero .core-wrap{display:none}.hero h1{font-size:27px}.hero .subtitle{margin:8px 0 18px}.suggestion-grid{gap:8px;margin:20px 0 14px}.suggestion{min-height:62px;padding:10px;border-radius:14px;font-size:12px}.conversation{gap:22px;margin:8px auto 18px}.user-message{max-width:88%;padding:11px 14px;border-radius:20px}.message-body{font-size:15px}.message-actions button{min-height:44px}.prompt{position:sticky;bottom:calc(6px + env(safe-area-inset-bottom));margin-top:auto;z-index:10;padding:7px;border-radius:24px;background:#171717;border-color:#3a3a3a;box-shadow:0 8px 30px #000a}.prompt textarea{min-height:42px;max-height:150px;font-size:16px}.prompt .send{width:42px;height:42px;min-width:42px;padding:0;border-radius:50%;font-size:21px}.hint{font-size:10px;margin:7px 5px 0}.model-panel{display:none!important}#result{margin-top:12px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.notice{margin-bottom:10px}.settings-sheet{display:block}.settings-sheet[hidden]{display:none!important}}
+@media(max-width:360px){.top-actions .status{max-width:95px}.suggestion-grid{grid-template-columns:1fr}.suggestion{min-height:48px}.grid,#machineView .grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <div id="ambient" aria-hidden="true"><div class="blob one"></div><div class="blob two"></div><div class="blob three"></div></div>
@@ -83,10 +95,24 @@ button:focus-visible,textarea:focus-visible{outline:2px solid white;outline-offs
   <div class="sidebottom"><div class="mini"><span>執行方式</span><strong>Browser Workspace</strong></div><div class="mini"><span>語言引擎</span><strong id="engineSide">尚未連接本機引擎</strong></div></div>
 </aside>
 <main>
-  <header class="top"><div><div class="eyebrow">KAPTIA / PERSONAL WORKSPACE</div><div style="margin-top:5px;font-size:12px;color:#aaa">本機文字助理</div></div><div class="status"><span class="dot"></span><span id="statusText">介面就緒 · 引擎未連接</span></div></header>
+  <header class="top app-top">
+    <button class="mobile-icon" id="historyOpen" type="button" aria-label="開啟聊天紀錄" title="聊天紀錄">☰</button>
+    <div class="top-brand"><div class="eyebrow">KAPTIA</div><div class="top-subtitle">個人 AI 助理</div></div>
+    <div class="top-actions"><div class="status"><span class="dot"></span><span id="statusText">介面就緒 · 引擎未連接</span></div><button class="mobile-icon" id="newChatBtn" type="button" aria-label="新增對話" title="新增對話">＋</button></div>
+  </header>
   <nav class="mobile-nav" aria-label="主要導覽"><button class="active" data-view="chat" type="button"><span>◌</span><span>對話</span></button><button data-view="machine" type="button"><span>▦</span><span>裝置</span></button><button data-view="repo" type="button"><span>⌘</span><span>專案</span></button></nav>
+  <div class="drawer-scrim" id="drawerScrim" hidden></div>
+  <aside class="history-drawer" id="historyDrawer" aria-label="聊天紀錄" aria-hidden="true">
+    <div class="drawer-head"><strong>聊天紀錄</strong><button class="mobile-icon" id="historyClose" type="button" aria-label="關閉聊天紀錄">✕</button></div>
+    <button class="drawer-new" id="drawerNewChat" type="button">＋　新增對話</button>
+    <div id="historyList" class="history-list"><p class="history-empty">尚無已儲存的對話</p></div>
+    <div class="drawer-footer"><button id="openSettings" type="button">⚙　模型與設定</button><button data-view="machine" type="button">▦　裝置配置</button><button data-view="repo" type="button">⌘　專案來源</button></div>
+  </aside>
   <section class="content" id="chatView">
-    <div class="hero"><div class="core-wrap"><div class="core"></div><div class="thinking-orbit"></div></div><h1>有什麼需要處理？</h1><p class="subtitle">一個乾淨、直接的工作空間。</p></div>
+    <div class="hero" id="emptyHero"><div class="core-wrap"><div class="core"></div><div class="thinking-orbit"></div></div><h1>今天想完成什麼？</h1><p class="subtitle">直接輸入問題，或從下面選一個開始。</p>
+      <div class="suggestion-grid"><button class="suggestion" type="button" data-prompt="幫我整理一份清楚的工作計畫">整理工作計畫<span>↗</span></button><button class="suggestion" type="button" data-prompt="用簡單的方式解釋一個複雜概念">解釋複雜概念<span>↗</span></button><button class="suggestion" type="button" data-prompt="幫我改善這段程式碼，並說明原因">改善程式碼<span>↗</span></button><button class="suggestion" type="button" data-prompt="幫我摘要以下內容，列出重點">整理摘要<span>↗</span></button></div>
+    </div>
+    <div id="conversation" class="conversation" aria-live="polite"></div>
     <div class="model-panel" style="margin:0 0 12px;padding:14px;border:1px solid #292929;border-radius:14px;background:#101010"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong style="font-size:12px;font-weight:500">Qwen 本機輕量模型</strong><div id="modelStatus" style="color:#888;font-size:11px;margin-top:4px">首次使用需下載模型；不會在未經你點擊前自動下載。</div></div><button class="ghost" id="modelBtn" type="button" style="border-color:#444;white-space:nowrap">下載／載入模型</button></div><progress id="modelProgress" max="100" value="0" style="width:100%;height:5px;margin-top:12px;display:none;accent-color:#eee"></progress><div id="modelProgressText" style="font-size:11px;color:#777;margin-top:5px" aria-live="polite"></div></div>
     <form id="chatForm" class="prompt"><textarea id="prompt" rows="1" placeholder="先下載 Qwen 模型，再輸入訊息…"></textarea><button class="send" id="sendBtn" type="submit" disabled>送出 ↑</button></form>
     <div class="hint">首次下載約數百 MB；建議使用 Wi-Fi。模型下載後會由瀏覽器快取重用，瀏覽器仍可能因儲存空間限制清除快取。Enter 送出 · Shift + Enter 換行</div>
@@ -97,6 +123,12 @@ button:focus-visible,textarea:focus-visible{outline:2px solid white;outline-offs
       <div class="card"><h3>執行狀態</h3><p>不會假裝模型已啟動</p><div class="value" id="runtimeSummary">等待本機引擎</div></div>
     </div>
     <div class="notice">這是可安裝的網頁工作台。瀏覽器無法直接讀取整台電腦的完整硬體、檔案或執行程序；完整效能偵測需要你另外安裝並明確啟動本機代理程式。</div>
+  </section>
+  <section class="settings-sheet" id="settingsSheet" hidden aria-label="模型與設定">
+    <div class="settings-head"><strong>模型與設定</strong><button class="mobile-icon" id="settingsClose" type="button" aria-label="關閉設定">✕</button></div>
+    <p class="subtitle">目前使用瀏覽器本機模型。下載失敗時，聊天仍可使用介面與已儲存的對話。</p>
+    <div class="model-panel" style="margin:0;padding:14px;border:1px solid #292929;border-radius:14px;background:#101010"><strong>Qwen 本機模型</strong><div id="settingsModelStatus" style="color:#888;font-size:12px;margin-top:6px">尚未載入</div><button class="send" id="settingsModelBtn" type="button" style="margin-top:12px">載入／重試模型</button></div>
+    <div class="notice">模型載入需要網路、儲存空間與足夠記憶體。這個頁面目前尚未連接遠端 AI API。</div>
   </section>
   <section class="content" id="machineView" hidden>
     <div class="eyebrow">LOCAL DEVICE / PERMISSION-BASED</div><h1 style="margin-top:12px">電腦配置</h1><p class="subtitle">點擊掃描，只讀取瀏覽器允許的資訊；不會讀取文件、程序清單或個人檔案。</p>
@@ -126,7 +158,7 @@ document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('clic
 let qwenPipe=null,qwenLoading=false;
 const QWEN_MODEL='onnx-community/Qwen2.5-0.5B-Instruct';
 const QWEN_REVISION='516c8d0';
-function modelStatus(text){$('modelStatus').textContent=text;}
+function modelStatus(text){$('modelStatus').textContent=text;const settings=$('settingsModelStatus');if(settings)settings.textContent=text;}
 async function loadQwen(){
   if(qwenPipe)return qwenPipe;
   if(qwenLoading)return null;
@@ -167,7 +199,7 @@ async function loadQwen(){
       }
     });
     localStorage.setItem('kaptia-qwen2.5-0.5b-instruct-ready','1');
-    $('sendBtn').disabled=false;$('prompt').placeholder='輸入訊息，於本機模型生成…';$('modelBtn').textContent='重新載入模型';modelStatus('模型已載入；後續開啟會嘗試重用瀏覽器快取。');$('modelBtn').setAttribute('aria-label','重新載入本機 Qwen 模型');$('modelProgress').value=100;$('modelProgressText').textContent='載入完成';$('statusText').textContent='Qwen 本機模型就緒';$('engineSide').textContent='Qwen 本機模型已載入';$('runtimeSummary').textContent='Qwen 本機模型就緒';
+    $('sendBtn').disabled=false;$('prompt').placeholder='傳送訊息給 Kaptia…';$('modelBtn').textContent='重新載入模型';modelStatus('模型已載入；後續開啟會嘗試重用瀏覽器快取。');$('modelBtn').setAttribute('aria-label','重新載入本機 Qwen 模型');$('modelProgress').value=100;$('modelProgressText').textContent='載入完成';$('statusText').textContent='Qwen 本機模型就緒';$('engineSide').textContent='Qwen 本機模型已載入';$('runtimeSummary').textContent='Qwen 本機模型就緒';
     return qwenPipe;
   }catch(err){
     qwenPipe=null;
@@ -180,24 +212,35 @@ async function loadQwen(){
     $('statusText').textContent='模型載入失敗';return null;
   }finally{qwenLoading=false;$('modelBtn').disabled=false;}
 }
-$('modelBtn').addEventListener('click',()=>loadQwen());
-$('chatForm').addEventListener('submit',async e=>{
-  e.preventDefault();const value=$('prompt').value.trim();if(!value)return;
-  if(!qwenPipe){showResult('KAPTIA','請先點擊「下載／載入模型」。首次下載模型可能需要數百 MB，建議使用 Wi-Fi；載入期間請保持此頁開啟。');return;}
-  document.body.classList.add('thinking');$('statusText').textContent='Qwen 正在本機生成';$('sendBtn').disabled=true;
-  try{
-    const mobile=window.matchMedia('(max-width: 760px)').matches;\n    const out=await qwenPipe([{role:'user',content:value}],{max_new_tokens:mobile?96:160,do_sample:true,temperature:0.7});
-    const generated=out&&out[0]?out[0].generated_text:null;
-    const answer=Array.isArray(generated)?(generated.slice().reverse().find(m=>m&&m.role==='assistant')||generated[generated.length-1]||{}).content:String(generated||'模型沒有回傳文字。');
-    showResult('QWEN · 本機生成',answer||'模型沒有回傳文字。');
-  }catch(err){showResult('KAPTIA · 錯誤','本機生成失敗：'+(err&&err.message?err.message:String(err)));}
-  finally{document.body.classList.remove('thinking');$('statusText').textContent='Qwen 本機模型就緒';$('sendBtn').disabled=!qwenPipe;}
-});
+$('modelBtn').addEventListener('click',async()=>{await loadQwen();$('settingsModelStatus').textContent=$('modelStatus').textContent;});
+const HISTORY_KEY='kaptia-chat-history-v1';
+let chats=[];let activeChatId=null;let generating=false;let lastUserPrompt='';
+try{const saved=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');if(Array.isArray(saved))chats=saved;}catch(_){}
+function persistChats(){try{localStorage.setItem(HISTORY_KEY,JSON.stringify(chats.slice(0,40)));}catch(_){setStatus('本機儲存空間不足；目前對話未能完整保存。');}}
+function setStatus(text){$('statusText').textContent=text;}
+function activeChat(){return chats.find(x=>x.id===activeChatId)||null;}
+function makeChat(){const chat={id:String(Date.now())+'-'+Math.random().toString(36).slice(2,8),title:'新對話',updated:Date.now(),messages:[]};chats.unshift(chat);activeChatId=chat.id;persistChats();renderChat();renderHistory();return chat;}
+function ensureChat(){return activeChat()||makeChat();}
+function renderHistory(){const root=$('historyList');root.replaceChildren();if(!chats.length){const p=document.createElement('p');p.className='history-empty';p.textContent='尚無已儲存的對話';root.append(p);return;}chats.slice().sort((a,b)=>b.updated-a.updated).forEach(chat=>{const row=document.createElement('div');row.className='history-row'+(chat.id===activeChatId?' active':'');const open=document.createElement('button');open.type='button';open.className='history-open';open.textContent=chat.title||'新對話';open.addEventListener('click',()=>{activeChatId=chat.id;renderChat();renderHistory();closeDrawer();});const del=document.createElement('button');del.type='button';del.className='history-delete';del.textContent='⋯';del.setAttribute('aria-label','對話選項');del.addEventListener('click',()=>{if(confirm('要刪除此對話嗎？')){chats=chats.filter(x=>x.id!==chat.id);if(activeChatId===chat.id)activeChatId=chats[0]?.id||null;persistChats();renderChat();renderHistory();}});row.append(open,del);root.append(row);});}
+function renderChat(){const chat=activeChat();const root=$('conversation');root.replaceChildren();$('emptyHero').hidden=!!(chat&&chat.messages.length);$('result').classList.remove('visible');if(!chat||!chat.messages.length){return;}chat.messages.forEach((msg,index)=>{const item=document.createElement('article');item.className='message '+(msg.role==='user'?'user-message':'assistant-message');const body=document.createElement('div');body.className='message-body';body.textContent=msg.content;item.append(body);if(msg.role==='assistant'){const actions=document.createElement('div');actions.className='message-actions';const copy=document.createElement('button');copy.type='button';copy.textContent='複製';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(msg.content);copy.textContent='已複製';setTimeout(()=>copy.textContent='複製',1200);}catch(_){copy.textContent='無法複製';}});actions.append(copy);if(index===chat.messages.length-1){const retry=document.createElement('button');retry.type='button';retry.textContent='重新生成';retry.addEventListener('click',()=>regenerateLast());actions.append(retry);}item.append(actions);}root.append(item);});if(!window.userScrolledConversation)window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});}
+function openDrawer(){$('historyDrawer').classList.add('open');$('drawerScrim').hidden=false;$('historyDrawer').setAttribute('aria-hidden','false');}
+function closeDrawer(){$('historyDrawer').classList.remove('open');$('drawerScrim').hidden=true;$('historyDrawer').setAttribute('aria-hidden','true');}
+function addMessage(role,content){const chat=ensureChat();chat.messages.push({role,content,at:Date.now()});chat.updated=Date.now();if(role==='user'&&chat.title==='新對話')chat.title=content.slice(0,42);persistChats();renderChat();renderHistory();return chat;}
+async function runPrompt(value,{appendUser=true}={}){if(generating)return;if(!qwenPipe){showResult('KAPTIA','目前沒有可用的 AI 推理引擎。請開啟「模型與設定」嘗試載入本機模型；遠端 AI 連線尚未設定。你的訊息已保留在輸入框。');return;}if(appendUser)addMessage('user',value);lastUserPrompt=value;generating=true;document.body.classList.add('thinking');setStatus('正在生成回答…');$('sendBtn').disabled=true;$('sendBtn').textContent='…';const chat=ensureChat();const placeholder={role:'assistant',content:'正在思考…',at:Date.now()};chat.messages.push(placeholder);renderChat();try{const mobile=window.matchMedia('(max-width: 760px)').matches;const out=await qwenPipe([{role:'user',content:value}],{max_new_tokens:mobile?96:160,do_sample:true,temperature:0.7});const generated=out&&out[0]?out[0].generated_text:null;const answer=Array.isArray(generated)?(generated.slice().reverse().find(m=>m&&m.role==='assistant')||generated[generated.length-1]||{}).content:String(generated||'模型沒有回傳文字。');placeholder.content=answer||'模型沒有回傳文字。';}catch(err){placeholder.content='生成失敗：'+(err&&err.message?err.message:String(err))+'。你可以點擊「重新生成」再試一次。';}finally{generating=false;chat.updated=Date.now();persistChats();renderChat();renderHistory();document.body.classList.remove('thinking');setStatus(qwenPipe?'本機模型就緒':'模型未連線');$('sendBtn').disabled=false;$('sendBtn').textContent='↑';}}
+function regenerateLast(){const chat=activeChat();if(!chat)return;const last=chat.messages.filter(m=>m.role==='user').at(-1);if(!last)return;const prior=chat.messages.at(-1);if(prior&&prior.role==='assistant')chat.messages.pop();persistChats();renderChat();runPrompt(last.content,{appendUser:false});}
+$('chatForm').addEventListener('submit',async e=>{e.preventDefault();const value=$('prompt').value.trim();if(!value||generating)return;if(qwenPipe){$('prompt').value='';resizePrompt();await runPrompt(value);}else{showResult('KAPTIA','模型尚未連線。請開啟「模型與設定」載入本機模型。你的訊息仍保留在輸入框，沒有送往任何外部服務。');}});
+$('historyOpen').addEventListener('click',openDrawer);$('historyClose').addEventListener('click',closeDrawer);$('drawerScrim').addEventListener('click',closeDrawer);
+$('newChatBtn').addEventListener('click',()=>{activeChatId=null;makeChat();$('prompt').focus();});
+$('drawerNewChat').addEventListener('click',()=>{activeChatId=null;makeChat();closeDrawer();$('prompt').focus();});
+$('openSettings').addEventListener('click',()=>{closeDrawer();$('settingsSheet').hidden=false;});
+$('settingsClose').addEventListener('click',()=>$('settingsSheet').hidden=true);
+$('settingsModelBtn').addEventListener('click',async()=>{await loadQwen();$('settingsModelStatus').textContent=$('modelStatus').textContent;});
+document.querySelectorAll('[data-prompt]').forEach(btn=>btn.addEventListener('click',()=>{$('prompt').value=btn.dataset.prompt;resizePrompt();$('prompt').focus();}));
 const promptBox=$('prompt');
 function resizePrompt(){promptBox.style.height='auto';promptBox.style.height=Math.min(promptBox.scrollHeight,120)+'px';}
 promptBox.addEventListener('input',resizePrompt,{passive:true});
 promptBox.addEventListener('focus',()=>{if(window.matchMedia('(max-width:760px)').matches)setTimeout(()=>promptBox.scrollIntoView({block:'nearest',behavior:'smooth'}),120)});
-if(localStorage.getItem('kaptia-qwen2.5-0.5b-instruct-ready')==='1'){
+renderHistory();if(chats.length){activeChatId=chats[0].id;renderChat();renderHistory();}\nif(localStorage.getItem('kaptia-qwen2.5-0.5b-instruct-ready')==='1'){
   modelStatus('偵測到先前啟用過 Qwen；正在嘗試從瀏覽器快取載入。若快取被系統清除，可能需要重新下載。');
   $('modelBtn').textContent='重新載入模型';
   window.addEventListener('load',()=>loadQwen(),{once:true});
@@ -207,7 +250,8 @@ function scan(){const mobile=matchMedia('(max-width: 760px)').matches||/Android|
 $('scanBtn').addEventListener('click',scan);
 async function syncRepo(){ $('repoSummary').textContent='讀取中…';$('repoDetail').textContent='正在連接 GitHub 公開 API…';try{const r=await fetch('https://api.github.com/repos/argusocean-wq/kaptia',{headers:{'Accept':'application/vnd.github+json'}});if(!r.ok)throw new Error('GitHub API HTTP '+r.status);const d=await r.json();$('repoSummary').textContent='已連線 · '+d.default_branch;$('repoDetail').textContent='預設分支：'+d.default_branch+' · 最近更新：'+(d.updated_at?new Date(d.updated_at).toLocaleString():'未知')+' · 公開專案。此頁只讀取專案中繼資料，不會在瀏覽器內安裝或執行 GitHub 程式碼。'}catch(e){$('repoSummary').textContent='同步失敗';$('repoDetail').textContent='無法取得 GitHub 資訊：'+e.message+'。請檢查網路或稍後重試。'}}
 $('syncBtn').addEventListener('click',syncRepo);syncRepo();
-if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));\nif(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent))document.documentElement.classList.add('touch-device');
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+if(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent))document.documentElement.classList.add('touch-device');
 </script>
 </body></html>
 <!-- Kaptia Pages redeploy trigger: remove stale deployment after custom-domain cleanup. -->
