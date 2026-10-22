@@ -121,8 +121,9 @@ $('chatForm').addEventListener('submit',async e=>{
   finally{document.body.classList.remove('thinking');$('statusText').textContent='Qwen 本機模型就緒';$('sendBtn').disabled=false;}
 });
 if(localStorage.getItem('kaptia-qwen2.5-0.5b-instruct-ready')==='1'){
-  modelStatus('偵測到先前載入過模型；點擊「重新載入模型」以重用瀏覽器快取。');
+  modelStatus('偵測到先前啟用過 Qwen；正在嘗試從瀏覽器快取載入。若快取被系統清除，可能需要重新下載。');
   $('modelBtn').textContent='重新載入模型';
+  window.addEventListener('load',()=>loadQwen(),{once:true});
 }
 $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chatForm').requestSubmit()}});
 function scan(){const cores=navigator.hardwareConcurrency||null;const mem=navigator.deviceMemory||null;const gl=document.createElement('canvas').getContext('webgl')||document.createElement('canvas').getContext('experimental-webgl');let gpu='瀏覽器未提供';if(gl){const ext=gl.getExtension('WEBGL_debug_renderer_info');gpu=ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'圖形資訊受瀏覽器保護'}$('cpuValue').textContent=cores?cores+' 個邏輯執行緒':'瀏覽器未提供';$('ramValue').textContent=mem?'約 '+mem+' GB（瀏覽器估計值）':'瀏覽器未提供';$('gpuValue').textContent=gpu;$('screenValue').textContent=screen.width+' × '+screen.height+' · DPR '+(devicePixelRatio||1);$('netValue').textContent=navigator.onLine?'目前連線中':'目前離線';let profile='一般模式';if((mem&&mem<=4)||(cores&&cores<=4))profile='輕量模式';else if(mem&&mem>=8&&cores&&cores>=8)profile='較高資源模式';$('profileValue').textContent=profile+'（粗略建議）';$('machineSummary').textContent=(cores?cores+' 執行緒':'硬體資訊有限')+' · '+profile;$('scanNotice').textContent='掃描完成。這些是瀏覽器可提供的估計資訊，不等於完整硬體診斷；GPU 名稱可能被隱藏，記憶體數字也可能經過取整。沒有修改任何系統設定。'}
