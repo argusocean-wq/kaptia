@@ -14,21 +14,23 @@ Kaptia 是以 Qwen 指令模型為基礎的本機 AI 專案，目標是在 Windo
 
 ## 目錄
 
-- `Modelfile`：將可用的 Qwen Ollama 模型建立為 Kaptia 名稱的模型設定
+- `Modelfile`：將 Qwen Ollama 模型建立為 Kaptia 名稱的設定
+- `scripts/open_kaptia.bat`：Windows 一鍵啟動；缺少 Kaptia 時會嘗試先建立
 - `scripts/build_ollama.bat`：下載基礎模型並建立 Kaptia
 - `scripts/setup_train.bat`：建立訓練虛擬環境並安裝依賴
 - `scripts/train_qlora.py`：使用 4-bit QLoRA + LoRA adapter 微調
 - `training/seed_dataset.jsonl`：少量示範資料，僅用於管線冒煙測試，不代表完整知識庫
 - `knowledge/PROJECT_CONTEXT.md`：Kaptia 專案知識起始文件
 
-## 先啟動未微調的 Kaptia
+## 一鍵啟動未微調版本
 
-1. 安裝並啟動 Ollama：<https://ollama.com/download/windows>
-2. 在本資料夾開啟終端機。
-3. 執行 `scripts\build_ollama.bat`。
-4. 完成後執行 `ollama run kaptia`。
+1. 下載或 Clone 本儲存庫到 Windows 電腦。
+2. 安裝 Ollama：<https://ollama.com/download/windows>
+3. 雙擊 `scripts\open_kaptia.bat`。
+4. 首次執行需要下載模型，請預留磁碟空間並等待下載完成；之後可再次雙擊啟動。
+5. 也可在終端機執行 `ollama run kaptia`。
 
-腳本使用的基礎標籤為 `qwen2.5:7b`。如果 Ollama 找不到此標籤，先以 `ollama list` 和官方模型庫確認有效標籤，再修改 `Modelfile` 的 `FROM`。
+腳本使用的基礎標籤為 `qwen2.5:7b`。若 Ollama 找不到此標籤，先以 `ollama list` 和官方模型庫確認有效標籤，再修改 `Modelfile` 的 `FROM`。
 
 ## 微調流程
 
