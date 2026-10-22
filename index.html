@@ -120,7 +120,7 @@ button:focus-visible,textarea:focus-visible{outline:2px solid white;outline-offs
 <script>
 const $=id=>document.getElementById(id);
 const showResult=(who,text)=>{$('resultWho').textContent=who;$('resultText').textContent=text;$('result').classList.add('visible')};
-document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b===btn));['chat','machine','repo'].forEach(v=>$(v+'View').hidden=v!==btn.dataset.view)}));
+document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===btn.dataset.view));['chat','machine','repo'].forEach(v=>$(v+'View').hidden=v!==btn.dataset.view);window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}));
 let qwenPipe=null,qwenLoading=false;
 const QWEN_MODEL='onnx-community/Qwen2.5-0.5B-Instruct';
 const QWEN_REVISION='516c8d0';
@@ -144,10 +144,10 @@ async function loadQwen(){
       }
     });
     localStorage.setItem('kaptia-qwen2.5-0.5b-instruct-ready','1');
-    $('sendBtn').disabled=false;$('prompt').placeholder='輸入訊息，於本機模型生成…';$('modelBtn').textContent='重新載入模型';modelStatus('模型已載入；後續開啟會嘗試重用瀏覽器快取。');$('modelProgress').value=100;$('modelProgressText').textContent='載入完成';$('statusText').textContent='Qwen 本機模型就緒';$('engineSide').textContent='Qwen 本機模型已載入';$('runtimeSummary').textContent='Qwen 本機模型就緒';
+    $('sendBtn').disabled=false;$('prompt').placeholder='輸入訊息，於本機模型生成…';$('modelBtn').textContent='重新載入模型';modelStatus('模型已載入；後續開啟會嘗試重用瀏覽器快取。');$('modelBtn').setAttribute('aria-label','重新載入本機 Qwen 模型');$('modelProgress').value=100;$('modelProgressText').textContent='載入完成';$('statusText').textContent='Qwen 本機模型就緒';$('engineSide').textContent='Qwen 本機模型已載入';$('runtimeSummary').textContent='Qwen 本機模型就緒';
     return qwenPipe;
   }catch(err){
-    qwenPipe=null;modelStatus('載入失敗：'+(err&&err.message?err.message:String(err)));$('modelProgressText').textContent='請確認網路、可用儲存空間及瀏覽器相容性。';$('statusText').textContent='模型載入失敗';return null;
+    qwenPipe=null;modelStatus('載入失敗：'+(err&&err.message?err.message:String(err)));$('modelBtn').textContent='重試載入模型';$('modelProgressText').textContent='請確認網路、可用儲存空間及瀏覽器相容性。';$('statusText').textContent='模型載入失敗';return null;
   }finally{qwenLoading=false;$('modelBtn').disabled=false;}
 }
 $('modelBtn').addEventListener('click',()=>loadQwen());
