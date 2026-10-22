@@ -130,11 +130,32 @@ async function loadQwen(){
   if(qwenLoading)return null;
   qwenLoading=true;$('modelBtn').disabled=true;$('modelProgress').style.display='block';$('modelProgress').value=0;$('modelProgressText').textContent='正在準備模型…';modelStatus('正在載入模型檔案；首次使用需要網路與儲存空間。');$('statusText').textContent='正在載入 Qwen';
   try{
+    const isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    if(isIOS){
+      modelStatus('iPhone／iPad 模式：使用單執行緒載入，請保持 Safari 在前景並避免鎖定螢幕。');
+      $('modelProgressText').textContent='手機需下載約 786 MB 的模型權重，另外還需要解壓與推理記憶體。';
+      if(navigator.storage&&navigator.storage.estimate){
+        try{
+          const estimate=await navigator.storage.estimate();
+          const free=typeof estimate.quota==='number'&&typeof estimate.usage==='number'?estimate.quota-estimate.usage:null;
+          if(free!==null&&free<900*1024*1024){
+            modelStatus('瀏覽器可用儲存空間可能不足。請先釋出裝置空間，再重試。');
+          }
+        }catch(_){}
+      }
+    }
     const {pipeline,env}=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
     env.useBrowserCache=true;
+    // iOS Safari is more stable with a single WASM thread; avoid SharedArrayBuffer/threaded runtime assumptions.
+    if(env.backends&&env.backends.onnx&&env.backends.onnx.wasm){
+      env.backends.onnx.wasm.numThreads=1;
+      env.backends.onnx.wasm.proxy=false;
+      env.backends.onnx.wasm.wasmPaths='https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/';
+    }
     qwenPipe=await pipeline('text-generation',QWEN_MODEL,{
       revision:QWEN_REVISION,
       dtype:'q4',
+      device:'wasm',
       progress_callback:(p)=>{
         if(p && typeof p.progress==='number'){
           const n=Math.max(0,Math.min(100,p.progress));$('modelProgress').value=n;
@@ -147,7 +168,14 @@ async function loadQwen(){
     $('sendBtn').disabled=false;$('prompt').placeholder='輸入訊息，於本機模型生成…';$('modelBtn').textContent='重新載入模型';modelStatus('模型已載入；後續開啟會嘗試重用瀏覽器快取。');$('modelBtn').setAttribute('aria-label','重新載入本機 Qwen 模型');$('modelProgress').value=100;$('modelProgressText').textContent='載入完成';$('statusText').textContent='Qwen 本機模型就緒';$('engineSide').textContent='Qwen 本機模型已載入';$('runtimeSummary').textContent='Qwen 本機模型就緒';
     return qwenPipe;
   }catch(err){
-    qwenPipe=null;modelStatus('載入失敗：'+(err&&err.message?err.message:String(err)));$('modelBtn').textContent='重試載入模型';$('modelProgressText').textContent='請確認網路、可用儲存空間及瀏覽器相容性。';$('statusText').textContent='模型載入失敗';return null;
+    qwenPipe=null;
+    const message=err&&err.message?err.message:String(err);
+    modelStatus('載入失敗：'+message);
+    $('modelBtn').textContent='重試載入模型';
+    $('modelProgressText').textContent=/quota|storage|space|memory|alloc|wasm|fetch|network|load/i.test(message)
+      ?'手機排錯：使用最新 iOS 與 Safari、保持頁面開啟、切換穩定 Wi-Fi、確認可用儲存空間後再試。模型約 786 MB；若 Safari 仍終止頁面，可能是裝置記憶體限制。'
+      :'請截取這行錯誤訊息回報，方便確認是下載、快取或推理引擎問題。';
+    $('statusText').textContent='模型載入失敗';return null;
   }finally{qwenLoading=false;$('modelBtn').disabled=false;}
 }
 $('modelBtn').addEventListener('click',()=>loadQwen());
