@@ -195,6 +195,9 @@ def run_workflow(generate, user_text):
                 review = verify_output(generate, user_text, plan, content)
         except Exception:
             events.append("自動修正失敗，保留內容並標記需要人工檢查")
+    # Keep the limitation visible even if the one-shot repair removed it.
+    if plan["needs_research"] and "查證狀態：" not in content:
+        content += "\\n\\n> 查證狀態：本次沒有可用的網路搜尋工具；涉及最新資訊或外部來源的主張仍需查證。"
     if not review["pass"]:
         events.append("品質閘門未能確認完全通過；請人工檢查")
     if review["needs_source_check"] or plan["needs_research"]:
