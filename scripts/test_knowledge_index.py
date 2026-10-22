@@ -14,7 +14,7 @@ class KnowledgeQueryTests(unittest.TestCase):
     def test_chinese_tokenizer_adds_bigrams(self):
         terms = query_knowledge.tokens("專案知識檢索")
         self.assertIn("專案知識檢索", terms)
-        self.assertIn("專", terms)
+        self.assertIn("專案", terms)
         self.assertIn("案知", terms)
 
     def test_empty_query_has_no_results(self):
