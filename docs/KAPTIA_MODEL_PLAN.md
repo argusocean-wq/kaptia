@@ -12,7 +12,7 @@
 
 - `training/seed_dataset.jsonl`: 起始訓練範例，仍需擴充與人工審核。
 - `training/eval_dataset.jsonl`: 保留的驗收題，禁止併入訓練資料。
-- `scripts/validate_training_data.py`: 檢查格式、空欄位、重複項與 train/eval 洩漏。
+- `scripts/validate_training_data.py`: 檢查格式、空欄位、重複項與 train/eval 洩漏。\n- `scripts/build_knowledge_index.py`: 從明確允許的 Markdown 來源建立帶有來源路徑、章節、SHA-256 的本機知識包。\n- `scripts/query_knowledge.py`: 不依賴外部套件的離線詞彙檢索基線；分數只代表詞彙匹配，不代表事實正確率。\n- `scripts/test_knowledge_index.py`: 知識檢索的基本測試。
 - `scripts/train_qlora.py`: 只計算 assistant 回覆 token 的訓練流程，並在每個 epoch 評估。
 - 訓練輸出位於 `outputs/kaptia-language-qlora/`，不應將模型權重或個人資料提交至 Git。
 
