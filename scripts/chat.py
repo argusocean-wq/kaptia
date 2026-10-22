@@ -22,11 +22,9 @@ def load_language_engine():
             MODEL_ID, use_fast=True, local_files_only=local_only
         )
         model = AutoModelForCausalLM.from_pretrained(
-            MODEL_ID,
-            torch_dtype=dtype,
+            MODEL_ID, torch_dtype=dtype,
             device_map="auto" if torch.cuda.is_available() else None,
-            low_cpu_mem_usage=True,
-            local_files_only=local_only,
+            low_cpu_mem_usage=True, local_files_only=local_only,
         )
     except Exception as exc:
         mode = "離線模式" if local_only else "模型載入"
@@ -41,7 +39,6 @@ def load_language_engine():
             model = PeftModel.from_pretrained(model, str(ADAPTER_DIR), local_files_only=True)
         except Exception as exc:
             raise RuntimeError("本機微調資料載入失敗；請確認 adapter 與基礎語言模型相容。") from exc
-
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
     model.eval()
@@ -62,8 +59,7 @@ def build_generator(tokenizer, model):
                 max_new_tokens=max(1, min(int(max_new_tokens), 1400)),
                 do_sample=temperature > 0,
                 temperature=max(0.1, float(temperature)),
-                top_p=0.9,
-                repetition_penalty=1.08,
+                top_p=0.9, repetition_penalty=1.08,
                 pad_token_id=tokenizer.pad_token_id,
                 eos_token_id=tokenizer.eos_token_id,
             )
@@ -74,12 +70,11 @@ def build_generator(tokenizer, model):
 
 def main():
     print("[Kaptia] 正在啟動本機文字助理…")
-    print("[Kaptia] 回覆流程：理解 → 規劃 → 選擇形式 → 生成 → 持續檢查 → 交付")
+    print("[Kaptia] 理解 → 技能指南 → 查證判斷 → 格式規劃 → 生成 → 驗證 → 交付")
     if torch.cuda.is_available():
         print("[Kaptia] 已偵測到相容的 GPU，準備載入語言引擎。")
     else:
         print("[Kaptia] 未偵測到 CUDA GPU，將嘗試使用 CPU；速度可能較慢。")
-
     try:
         tokenizer, model = load_language_engine()
         generate = build_generator(tokenizer, model)
@@ -88,7 +83,7 @@ def main():
         return 1
 
     print("[Kaptia] 已就緒。輸入 /exit 離開。")
-    print("[Kaptia] 長文件會先規劃大綱再分段生成；需外部查證時會明確標示工具限制。")
+    print("[Kaptia] 長內容會先列大綱再分段；本機自我審核不等於外部事實查證。")
     while True:
         try:
             user_text = input("\n你：").strip()
@@ -100,14 +95,16 @@ def main():
             break
         if not user_text:
             continue
-
         try:
             result = run_workflow(generate, user_text)
-            print("\nKaptia：")
-            print(result["content"])
+            print("\nKaptia：\n" + result["content"])
             print("\n[流程紀錄]")
             for event in result["events"]:
                 print(f"  • {event}")
+            review = result.get("review", {})
+            print(f"[自我審核] {'通過' if review.get('pass') else '未能確認通過'}（非獨立事實查核）")
+            for issue in review.get("issues", []):
+                print(f"  - 待檢查：{issue}")
             if result["artifact_path"]:
                 print(f"[交付檔案] {result['artifact_path']}")
         except torch.cuda.OutOfMemoryError:
