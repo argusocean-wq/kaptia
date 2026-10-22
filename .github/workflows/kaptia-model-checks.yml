@@ -5,11 +5,17 @@ on:
     paths:
       - "scripts/**"
       - "training/**"
+      - "knowledge/**"
+      - "docs/**"
+      - "README.md"
       - ".github/workflows/kaptia-model-checks.yml"
   pull_request:
     paths:
       - "scripts/**"
       - "training/**"
+      - "knowledge/**"
+      - "docs/**"
+      - "README.md"
       - ".github/workflows/kaptia-model-checks.yml"
   workflow_dispatch:
 
@@ -17,7 +23,7 @@ permissions:
   contents: read
 
 jobs:
-  validate-training-data:
+  validate-training-and-knowledge:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,3 +36,9 @@ jobs:
         run: python -m compileall -q scripts
       - name: Validate training/evaluation data
         run: python scripts/validate_training_data.py
+      - name: Test local knowledge retrieval
+        run: python -m unittest scripts/test_knowledge_index.py
+      - name: Build local knowledge pack
+        run: python scripts/build_knowledge_index.py
+      - name: Smoke-test source-attributed retrieval
+        run: python scripts/query_knowledge.py "iPhone Safari 專案知識" --top-k 3
