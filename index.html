@@ -44,8 +44,9 @@ button:focus-visible,textarea:focus-visible{outline:2px solid white;outline-offs
   <header class="top"><div><div class="eyebrow">KAPTIA / PERSONAL WORKSPACE</div><div style="margin-top:5px;font-size:12px;color:#aaa">本機文字助理</div></div><div class="status"><span class="dot"></span><span id="statusText">介面就緒 · 引擎未連接</span></div></header>
   <section class="content" id="chatView">
     <div class="hero"><div class="core-wrap"><div class="core"></div><div class="thinking-orbit"></div></div><h1>有什麼需要處理？</h1><p class="subtitle">一個乾淨、直接的工作空間。</p></div>
-    <form id="chatForm" class="prompt"><textarea id="prompt" rows="1" placeholder="輸入訊息…（目前需要連接本機引擎才能生成回答）"></textarea><button class="send" id="sendBtn" type="submit">送出 ↑</button></form>
-    <div class="hint">Enter 送出 · Shift + Enter 換行</div>
+    <div class="model-panel" style="margin:0 0 12px;padding:14px;border:1px solid #292929;border-radius:14px;background:#101010"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong style="font-size:12px;font-weight:500">Qwen 本機輕量模型</strong><div id="modelStatus" style="color:#888;font-size:11px;margin-top:4px">首次使用需下載模型；不會在未經你點擊前自動下載。</div></div><button class="ghost" id="modelBtn" type="button" style="border-color:#444;white-space:nowrap">下載／載入模型</button></div><progress id="modelProgress" max="100" value="0" style="width:100%;height:5px;margin-top:12px;display:none;accent-color:#eee"></progress><div id="modelProgressText" style="font-size:11px;color:#777;margin-top:5px" aria-live="polite"></div></div>
+    <form id="chatForm" class="prompt"><textarea id="prompt" rows="1" placeholder="先下載 Qwen 模型，再輸入訊息…"></textarea><button class="send" id="sendBtn" type="submit" disabled>送出 ↑</button></form>
+    <div class="hint">首次下載約數百 MB；建議使用 Wi-Fi。模型下載後會由瀏覽器快取重用，瀏覽器仍可能因儲存空間限制清除快取。Enter 送出 · Shift + Enter 換行</div>
     <div class="result" id="result"><div class="who" id="resultWho">KAPTIA</div><div id="resultText"></div></div>
     <div class="grid">
       <div class="card"><h3>電腦配置</h3><p>只讀取瀏覽器允許提供的基本資訊</p><div class="value" id="machineSummary">尚未掃描</div></div>
@@ -77,7 +78,52 @@ button:focus-visible,textarea:focus-visible{outline:2px solid white;outline-offs
 const $=id=>document.getElementById(id);
 const showResult=(who,text)=>{$('resultWho').textContent=who;$('resultText').textContent=text;$('result').classList.add('visible')};
 document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b===btn));['chat','machine','repo'].forEach(v=>$(v+'View').hidden=v!==btn.dataset.view)}));
-$('chatForm').addEventListener('submit',e=>{e.preventDefault();const value=$('prompt').value.trim();if(!value)return;document.body.classList.add('thinking');$('statusText').textContent='正在準備請求';$('sendBtn').disabled=true;showResult('KAPTIA','目前這個 Pages 工作台尚未連接本機語言引擎，因此不會假裝已經生成回答。請先下載並啟動 Kaptia 本機引擎；連接介面完成後，訊息才會交由本機模型處理。');setTimeout(()=>{document.body.classList.remove('thinking');$('statusText').textContent='介面就緒 · 引擎未連接';$('sendBtn').disabled=false},900)});
+let qwenPipe=null,qwenLoading=false;
+const QWEN_MODEL='onnx-community/Qwen2.5-0.5B-Instruct';
+const QWEN_REVISION='516c8d0';
+function modelStatus(text){$('modelStatus').textContent=text;}
+async function loadQwen(){
+  if(qwenPipe)return qwenPipe;
+  if(qwenLoading)return null;
+  qwenLoading=true;$('modelBtn').disabled=true;$('modelProgress').style.display='block';$('modelProgress').value=0;$('modelProgressText').textContent='正在準備模型…';modelStatus('正在載入模型檔案；首次使用需要網路與儲存空間。');$('statusText').textContent='正在載入 Qwen';
+  try{
+    const {pipeline,env}=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
+    env.useBrowserCache=true;
+    qwenPipe=await pipeline('text-generation',QWEN_MODEL,{
+      revision:QWEN_REVISION,
+      dtype:'q4',
+      progress_callback:(p)=>{
+        if(p && typeof p.progress==='number'){
+          const n=Math.max(0,Math.min(100,p.progress));$('modelProgress').value=n;
+          $('modelProgressText').textContent=(p.file||'模型檔案')+' · '+Math.round(n)+'%';
+        }else if(p&&p.status==='ready'){$('modelProgressText').textContent='模型檔案已準備完成';}
+        else if(p&&p.status){$('modelProgressText').textContent=p.status+(p.file?' · '+p.file:'');}
+      }
+    });
+    localStorage.setItem('kaptia-qwen2.5-0.5b-instruct-ready','1');
+    $('sendBtn').disabled=false;$('prompt').placeholder='輸入訊息，於本機模型生成…';$('modelBtn').textContent='重新載入模型';modelStatus('模型已載入；後續開啟會嘗試重用瀏覽器快取。');$('modelProgress').value=100;$('modelProgressText').textContent='載入完成';$('statusText').textContent='Qwen 本機模型就緒';$('engineSide').textContent='Qwen 本機模型已載入';$('runtimeSummary').textContent='Qwen 本機模型就緒';
+    return qwenPipe;
+  }catch(err){
+    qwenPipe=null;modelStatus('載入失敗：'+(err&&err.message?err.message:String(err)));$('modelProgressText').textContent='請確認網路、可用儲存空間及瀏覽器相容性。';$('statusText').textContent='模型載入失敗';return null;
+  }finally{qwenLoading=false;$('modelBtn').disabled=false;}
+}
+$('modelBtn').addEventListener('click',()=>loadQwen());
+$('chatForm').addEventListener('submit',async e=>{
+  e.preventDefault();const value=$('prompt').value.trim();if(!value)return;
+  if(!qwenPipe){showResult('KAPTIA','請先點擊「下載／載入模型」。首次下載模型可能需要數百 MB，建議使用 Wi-Fi。');return;}
+  document.body.classList.add('thinking');$('statusText').textContent='Qwen 正在本機生成';$('sendBtn').disabled=true;
+  try{
+    const out=await qwenPipe([{role:'user',content:value}],{max_new_tokens:160,do_sample:true,temperature:0.7});
+    const generated=out&&out[0]?out[0].generated_text:null;
+    const answer=Array.isArray(generated)?(generated.slice().reverse().find(m=>m&&m.role==='assistant')||generated[generated.length-1]||{}).content:String(generated||'模型沒有回傳文字。');
+    showResult('QWEN · 本機生成',answer||'模型沒有回傳文字。');
+  }catch(err){showResult('KAPTIA · 錯誤','本機生成失敗：'+(err&&err.message?err.message:String(err)));}
+  finally{document.body.classList.remove('thinking');$('statusText').textContent='Qwen 本機模型就緒';$('sendBtn').disabled=false;}
+});
+if(localStorage.getItem('kaptia-qwen2.5-0.5b-instruct-ready')==='1'){
+  modelStatus('偵測到先前載入過模型；點擊「重新載入模型」以重用瀏覽器快取。');
+  $('modelBtn').textContent='重新載入模型';
+}
 $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chatForm').requestSubmit()}});
 function scan(){const cores=navigator.hardwareConcurrency||null;const mem=navigator.deviceMemory||null;const gl=document.createElement('canvas').getContext('webgl')||document.createElement('canvas').getContext('experimental-webgl');let gpu='瀏覽器未提供';if(gl){const ext=gl.getExtension('WEBGL_debug_renderer_info');gpu=ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'圖形資訊受瀏覽器保護'}$('cpuValue').textContent=cores?cores+' 個邏輯執行緒':'瀏覽器未提供';$('ramValue').textContent=mem?'約 '+mem+' GB（瀏覽器估計值）':'瀏覽器未提供';$('gpuValue').textContent=gpu;$('screenValue').textContent=screen.width+' × '+screen.height+' · DPR '+(devicePixelRatio||1);$('netValue').textContent=navigator.onLine?'目前連線中':'目前離線';let profile='一般模式';if((mem&&mem<=4)||(cores&&cores<=4))profile='輕量模式';else if(mem&&mem>=8&&cores&&cores>=8)profile='較高資源模式';$('profileValue').textContent=profile+'（粗略建議）';$('machineSummary').textContent=(cores?cores+' 執行緒':'硬體資訊有限')+' · '+profile;$('scanNotice').textContent='掃描完成。這些是瀏覽器可提供的估計資訊，不等於完整硬體診斷；GPU 名稱可能被隱藏，記憶體數字也可能經過取整。沒有修改任何系統設定。'}
 $('scanBtn').addEventListener('click',scan);
