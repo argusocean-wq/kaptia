@@ -120,6 +120,8 @@ button:focus-visible,textarea:focus-visible{outline:2px solid white;outline-offs
 <script>
 const $=id=>document.getElementById(id);
 const showResult=(who,text)=>{$('resultWho').textContent=who;$('resultText').textContent=text;$('result').classList.add('visible')};
+function updateDeviceLabels(){const mobile=matchMedia('(max-width: 760px)').matches||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);const h=$('machineView').querySelector('h1');if(h)h.textContent=mobile?'手機配置':'電腦配置';const sub=$('machineView').querySelector('.subtitle');if(sub)sub.textContent=mobile?'查看手機瀏覽器可提供的效能與連線資訊；數值受 iOS／Android 隱私限制，並非完整硬體規格。':'點擊掃描，只讀取瀏覽器允許的資訊；不會讀取文件、程序清單或個人檔案。'}
+updateDeviceLabels();window.addEventListener('resize',updateDeviceLabels);
 document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===btn.dataset.view));['chat','machine','repo'].forEach(v=>$(v+'View').hidden=v!==btn.dataset.view);window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}));
 let qwenPipe=null,qwenLoading=false;
 const QWEN_MODEL='onnx-community/Qwen2.5-0.5B-Instruct';
@@ -146,11 +148,11 @@ async function loadQwen(){
     }
     const {pipeline,env}=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
     env.useBrowserCache=true;
-    // iOS Safari is more stable with a single WASM thread; avoid SharedArrayBuffer/threaded runtime assumptions.
+    // Keep the library's bundled ONNX Runtime WASM asset resolution.
+    // Overriding wasmPaths with the Transformers package directory can point to the wrong files on mobile Safari.
     if(env.backends&&env.backends.onnx&&env.backends.onnx.wasm){
       env.backends.onnx.wasm.numThreads=1;
       env.backends.onnx.wasm.proxy=false;
-      env.backends.onnx.wasm.wasmPaths='https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/';
     }
     qwenPipe=await pipeline('text-generation',QWEN_MODEL,{
       revision:QWEN_REVISION,
@@ -201,7 +203,7 @@ if(localStorage.getItem('kaptia-qwen2.5-0.5b-instruct-ready')==='1'){
   window.addEventListener('load',()=>loadQwen(),{once:true});
 }
 $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chatForm').requestSubmit()}});
-function scan(){const cores=navigator.hardwareConcurrency||null;const mem=navigator.deviceMemory||null;const gl=document.createElement('canvas').getContext('webgl')||document.createElement('canvas').getContext('experimental-webgl');let gpu='瀏覽器未提供';if(gl){const ext=gl.getExtension('WEBGL_debug_renderer_info');gpu=ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'圖形資訊受瀏覽器保護'}$('cpuValue').textContent=cores?cores+' 個邏輯執行緒':'瀏覽器未提供';$('ramValue').textContent=mem?'約 '+mem+' GB（瀏覽器估計值）':'瀏覽器未提供';$('gpuValue').textContent=gpu;$('screenValue').textContent=screen.width+' × '+screen.height+' · DPR '+(devicePixelRatio||1);$('netValue').textContent=navigator.onLine?'目前連線中':'目前離線';let profile='一般模式';if((mem&&mem<=4)||(cores&&cores<=4))profile='輕量模式';else if(mem&&mem>=8&&cores&&cores>=8)profile='較高資源模式';$('profileValue').textContent=profile+'（粗略建議）';$('machineSummary').textContent=(cores?cores+' 執行緒':'硬體資訊有限')+' · '+profile;$('scanNotice').textContent='掃描完成。這些是瀏覽器可提供的估計資訊，不等於完整硬體診斷；GPU 名稱可能被隱藏，記憶體數字也可能經過取整。沒有修改任何系統設定。'}
+function scan(){const mobile=matchMedia('(max-width: 760px)').matches||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);const cores=navigator.hardwareConcurrency||null;const mem=navigator.deviceMemory||null;const gl=document.createElement('canvas').getContext('webgl')||document.createElement('canvas').getContext('experimental-webgl');let gpu='瀏覽器未提供';if(gl){const ext=gl.getExtension('WEBGL_debug_renderer_info');gpu=ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'圖形資訊受瀏覽器保護'}$('machineView').querySelector('h1').textContent=mobile?'手機配置':'電腦配置';$('machineView').querySelector('.subtitle').textContent=mobile?'查看手機瀏覽器可提供的效能與連線資訊；數值受 iOS／Android 隱私限制，並非完整硬體規格。':'查看電腦瀏覽器可提供的效能與連線資訊；不會讀取文件或程序清單。';$('cpuValue').textContent=cores?cores+(mobile?' 個可用執行緒（估計）':' 個邏輯執行緒'):'瀏覽器未提供';$('ramValue').textContent=mem?'約 '+mem+' GB（瀏覽器估計值）':(mobile?'系統未向瀏覽器公開':'瀏覽器未提供');$('gpuValue').textContent=gpu;$('screenValue').textContent=screen.width+' × '+screen.height+' · DPR '+(devicePixelRatio||1);$('netValue').textContent=navigator.onLine?'目前連線中':'目前離線';let profile=mobile?'手機平衡模式':'一般模式';if((mem&&mem<=4)||(cores&&cores<=4))profile=mobile?'手機輕量模式':'輕量模式';else if(mem&&mem>=8&&cores&&cores>=8)profile=mobile?'手機高效能模式':'較高資源模式';$('profileValue').textContent=profile+'（粗略建議）';$('machineSummary').textContent=(cores?cores+' 執行緒':'硬體資訊有限')+' · '+profile;$('scanNotice').textContent=mobile?'手機配置掃描完成。iPhone／iPad 通常不會公開 RAM 與完整 GPU 名稱，因此「未提供」不代表手機沒有該硬體。未更改系統設定。':'掃描完成。這些是瀏覽器可提供的估計資訊，不等於完整硬體診斷；GPU 名稱可能被隱藏，記憶體數字也可能經過取整。沒有修改任何系統設定。'}
 $('scanBtn').addEventListener('click',scan);
 async function syncRepo(){ $('repoSummary').textContent='讀取中…';$('repoDetail').textContent='正在連接 GitHub 公開 API…';try{const r=await fetch('https://api.github.com/repos/argusocean-wq/kaptia',{headers:{'Accept':'application/vnd.github+json'}});if(!r.ok)throw new Error('GitHub API HTTP '+r.status);const d=await r.json();$('repoSummary').textContent='已連線 · '+d.default_branch;$('repoDetail').textContent='預設分支：'+d.default_branch+' · 最近更新：'+(d.updated_at?new Date(d.updated_at).toLocaleString():'未知')+' · 公開專案。此頁只讀取專案中繼資料，不會在瀏覽器內安裝或執行 GitHub 程式碼。'}catch(e){$('repoSummary').textContent='同步失敗';$('repoDetail').textContent='無法取得 GitHub 資訊：'+e.message+'。請檢查網路或稍後重試。'}}
 $('syncBtn').addEventListener('click',syncRepo);syncRepo();
