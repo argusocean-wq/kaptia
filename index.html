@@ -154,7 +154,7 @@ const $=id=>document.getElementById(id);
 const showResult=(who,text)=>{$('resultWho').textContent=who;$('resultText').textContent=text;$('result').classList.add('visible')};
 function updateDeviceLabels(){const mobile=matchMedia('(max-width: 760px)').matches||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);const h=$('machineView').querySelector('h1');if(h)h.textContent=mobile?'手機配置':'電腦配置';const sub=$('machineView').querySelector('.subtitle');if(sub)sub.textContent=mobile?'查看手機瀏覽器可提供的效能與連線資訊；數值受 iOS／Android 隱私限制，並非完整硬體規格。':'點擊掃描，只讀取瀏覽器允許的資訊；不會讀取文件、程序清單或個人檔案。'}
 updateDeviceLabels();window.addEventListener('resize',updateDeviceLabels);
-document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===btn.dataset.view));['chat','machine','repo'].forEach(v=>$(v+'View').hidden=v!==btn.dataset.view);window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}));
+document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===btn.dataset.view));['chat','machine','repo'].forEach(v=>$(v+'View').hidden=v!==btn.dataset.view);if(typeof closeDrawer==='function')closeDrawer();window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}));
 let qwenPipe=null,qwenLoading=false;
 const QWEN_MODEL='onnx-community/Qwen2.5-0.5B-Instruct';
 const QWEN_REVISION='516c8d0';
@@ -240,7 +240,8 @@ const promptBox=$('prompt');
 function resizePrompt(){promptBox.style.height='auto';promptBox.style.height=Math.min(promptBox.scrollHeight,120)+'px';}
 promptBox.addEventListener('input',resizePrompt,{passive:true});
 promptBox.addEventListener('focus',()=>{if(window.matchMedia('(max-width:760px)').matches)setTimeout(()=>promptBox.scrollIntoView({block:'nearest',behavior:'smooth'}),120)});
-renderHistory();if(chats.length){activeChatId=chats[0].id;renderChat();renderHistory();}\nif(localStorage.getItem('kaptia-qwen2.5-0.5b-instruct-ready')==='1'){
+renderHistory();if(chats.length){activeChatId=chats[0].id;renderChat();renderHistory();}
+if(localStorage.getItem('kaptia-qwen2.5-0.5b-instruct-ready')==='1'){
   modelStatus('偵測到先前啟用過 Qwen；正在嘗試從瀏覽器快取載入。若快取被系統清除，可能需要重新下載。');
   $('modelBtn').textContent='重新載入模型';
   window.addEventListener('load',()=>loadQwen(),{once:true});
