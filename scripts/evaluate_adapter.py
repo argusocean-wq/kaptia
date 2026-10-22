@@ -80,16 +80,26 @@ def main():
     if torch.cuda.is_available():
         common["device_map"] = "auto"
 
-    print(f"[Kaptia Eval] base={MODEL_ID}; prompts={len(rows)}")
+    # Run separate model instances sequentially so loading PEFT cannot contaminate
+    # the base-model baseline. This also lowers peak memory usage.
+    base_answers = []
+    print("[Kaptia Eval] Pass 1/2: base model")
     base_model = AutoModelForCausalLM.from_pretrained(MODEL_ID, **common)
     base_model.eval()
-    adapter_model = PeftModel.from_pretrained(base_model, str(ADAPTER_DIR))
-    adapter_model.eval()
+    for index, row in enumerate(rows, 1):
+        base_answers.append(generate(tokenizer, base_model, row["instruction"], row.get("input", "")))
+        print(f"[base {index}/{len(rows)}]")
+    del base_model
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
+    print("[Kaptia Eval] Pass 2/2: Kaptia adapter")
+    adapter_base = AutoModelForCausalLM.from_pretrained(MODEL_ID, **common)
+    adapter_model = PeftModel.from_pretrained(adapter_base, str(ADAPTER_DIR))
+    adapter_model.eval()
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with OUT_PATH.open("w", encoding="utf-8") as out:
-        for index, row in enumerate(rows, 1):
-            base_answer = generate(tokenizer, base_model, row["instruction"], row.get("input", ""))
+        for index, (row, base_answer) in enumerate(zip(rows, base_answers), 1):
             adapter_answer = generate(tokenizer, adapter_model, row["instruction"], row.get("input", ""))
             record = {
                 "index": index,
@@ -99,8 +109,11 @@ def main():
                 "kaptia_adapter_answer": adapter_answer,
                 "human_review": {"base_score": None, "adapter_score": None, "notes": ""},
             }
-            out.write(json.dumps(record, ensure_ascii=False) + "\n")
+            out.write(json.dumps(record, ensure_ascii=False) + "\\n")
             print(f"[{index}/{len(rows)}] captured; manually review both answers")
+    del adapter_model, adapter_base
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     print(f"[Kaptia Eval] output={OUT_PATH}")
     print(f"[Kaptia Eval] eval_sha256={sha256(EVAL_PATH)}")
     print("[Kaptia Eval] 未自動判定 adapter 較好；請逐題人工評分並記錄理由。")
