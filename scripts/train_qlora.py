@@ -141,7 +141,7 @@ def main():
         learning_rate=2e-4,
         logging_steps=1,
         save_strategy="epoch",
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         save_total_limit=2,
         fp16=True,
         gradient_checkpointing=True,
