@@ -29,6 +29,10 @@ Kaptia 是以繁體中文為預設的本機文字 AI 助理。執行時不依賴
 - `training/seed_dataset.jsonl`：少量示範訓練資料，僅用於管線起步
 - `training/eval_dataset.jsonl`：獨立驗收資料，不應加入訓練集
 - `scripts/validate_training_data.py`：JSONL 欄位、重複項與 train/eval 洩漏檢查
+- `training/code_languages.json`：程式語言分類、任務類型與品質門檻
+- `training/code_seed_dataset.jsonl`：初始多語言程式碼訓練樣本
+- `training/code_eval_dataset.jsonl`：獨立程式碼驗收樣本，需人工審查
+- `scripts/validate_code_dataset.py`：程式碼驗收資料結構檢查
 - `docs/KAPTIA_MODEL_PLAN.md`：Windows 訓練與 iPhone 本機推理的分工及驗收規格
 - `knowledge/PROJECT_CONTEXT.md`：專案知識起始文件
 - `artifacts/`：執行時產生的本機交付檔案
@@ -46,8 +50,8 @@ Kaptia 是以繁體中文為預設的本機文字 AI 助理。執行時不依賴
 ## 微調
 
 1. 執行 `scripts\\setup_train.bat`，並確認 PyTorch 與 CUDA 版本相容。
-2. 只把具備使用權、品質審核且去除個資的資料放進 `training/seed_dataset.jsonl`；每行一個 JSON 物件，欄位為 `instruction`、`input`、`output`。
-3. 先執行 `python scripts\\validate_training_data.py`，確認訓練集與驗收集沒有指令重疊。
+2. 通用訓練資料放在 `training/seed_dataset.jsonl`，多語言程式碼訓練資料放在 `training/code_seed_dataset.jsonl`。資料需具備使用權、經品質審核且去除個資；目前程式碼樣本仍標記為待人工審查。
+3. 先執行 `python scripts\\validate_training_data.py` 與 `python scripts\\validate_code_dataset.py`，檢查資料格式。程式碼驗收集 `training/code_eval_dataset.jsonl` 不會自動加入訓練集。
 4. 在虛擬環境中執行 `python scripts\\train_qlora.py`。流程會使用 assistant 回答 token 作為訓練目標，並在每個 epoch 評估保留集。
 5. 訓練 adapter 預設寫入 `outputs/kaptia-language-qlora/adapter`，指標寫入 `outputs/kaptia-language-qlora/metrics.json`。聊天程式會在此 adapter 存在時嘗試載入。
 6. 執行 `python scripts\\evaluate_adapter.py`，在獨立驗收題上分別執行基礎模型與 adapter；檢查 `outputs/kaptia-language-qlora/comparison.jsonl` 並人工評分。示範資料量少，不足以證明能力提升。
