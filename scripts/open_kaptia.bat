@@ -2,25 +2,48 @@
 setlocal
 cd /d "%~dp0.."
 
-where ollama >nul 2>nul
+where py >nul 2>nul
 if errorlevel 1 (
-  echo [ERROR] Ollama is not installed or not on PATH.
-  echo Install: https://ollama.com/download/windows
+  echo [ERROR] Python launcher not found. Install Python 3.10 or 3.11.
   pause
   exit /b 1
 )
 
-ollama list | findstr /i /c:"kaptia" >nul
-if errorlevel 1 (
-  echo [INFO] Kaptia model not found. Preparing the base model first...
-  call "%~dp0build_ollama.bat"
+if not exist ".venv\Scripts\python.exe" (
+  echo [INFO] Creating Kaptia Python environment...
+  py -3.11 -m venv .venv
   if errorlevel 1 (
-    echo [ERROR] Kaptia setup failed. See the messages above.
-    pause
-    exit /b 1
+    py -3.10 -m venv .venv
+    if errorlevel 1 (
+      echo [ERROR] Could not create Python environment.
+      pause
+      exit /b 1
+    )
   )
 )
 
-echo [INFO] Starting Kaptia. Type /bye or press Ctrl+D to exit the chat.
-ollama run kaptia
+call ".venv\Scripts\activate.bat"
+if errorlevel 1 exit /b 1
+
+python -c "import transformers, torch" >nul 2>nul
+if errorlevel 1 (
+  echo [INFO] Installing inference dependencies. This may take several minutes.
+  python -m pip install --upgrade pip
+  if errorlevel 1 goto :failed
+  python -m pip install -r requirements.txt
+  if errorlevel 1 goto :failed
+)
+
+python scripts\chat.py
+if errorlevel 1 (
+  echo [ERROR] Kaptia stopped with an error. Read the output above.
+  pause
+  exit /b 1
+)
 endlocal
+exit /b 0
+
+:failed
+echo [ERROR] Setup failed. Check Python, network, disk space, and PyTorch compatibility.
+pause
+exit /b 1

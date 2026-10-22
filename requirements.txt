@@ -1,0 +1,6 @@
+# Install a PyTorch wheel compatible with your NVIDIA driver/CUDA from https://pytorch.org/get-started/locally/
+torch>=2.3.1
+transformers>=4.45.0
+accelerate>=1.0.0
+safetensors>=0.4.5
+peft>=0.13.0
