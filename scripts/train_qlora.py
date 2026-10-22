@@ -19,31 +19,37 @@ from transformers import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-TRAIN_PATH = ROOT / "training" / "seed_dataset.jsonl"
+TRAIN_PATHS = [ROOT / "training" / "seed_dataset.jsonl", ROOT / "training" / "code_seed_dataset.jsonl"]
 EVAL_PATH = ROOT / "training" / "eval_dataset.jsonl"
 OUTPUT_DIR = ROOT / "outputs" / "kaptia-language-qlora"
 MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "Qwen/Qwen2.5-7B-Instruct")
 MAX_LENGTH = int(os.environ.get("KAPTIA_MAX_LENGTH", "1024"))
 
 
-def load_examples(path: Path):
+def load_examples(paths):
+    if isinstance(paths, (str, Path)):
+        paths = [Path(paths)]
     rows = []
-    with path.open("r", encoding="utf-8") as handle:
-        for line_no, line in enumerate(handle, 1):
-            if not line.strip():
-                continue
-            item = json.loads(line)
-            for key in ("instruction", "output"):
-                if not isinstance(item.get(key), str) or not item[key].strip():
-                    raise ValueError(f"{path.name}:{line_no} 缺少非空欄位 {key}")
-            user_text = item["instruction"]
-            if item.get("input", "").strip():
-                user_text += "\n\n補充資料：\n" + item["input"].strip()
-            rows.append({"user_text": user_text, "answer": item["output"].strip()})
+    for path in paths:
+        if not path.is_file():
+            raise FileNotFoundError(f"找不到資料檔：{path}")
+        with path.open("r", encoding="utf-8") as handle:
+            for line_no, line in enumerate(handle, 1):
+                if not line.strip():
+                    continue
+                item = json.loads(line)
+                for key in ("instruction", "output"):
+                    if not isinstance(item.get(key), str) or not item[key].strip():
+                        raise ValueError(f"{path.name}:{line_no} 缺少非空欄位 {key}")
+                user_text = item["instruction"]
+                if item.get("language"):
+                    user_text = "程式語言：" + item["language"] + "\\n任務類型：" + item.get("task_type", "coding") + "\\n" + user_text
+                if item.get("input", "").strip():
+                    user_text += "\\n\\n補充資料：\\n" + item["input"].strip()
+                rows.append({"user_text": user_text, "answer": item["output"].strip()})
     if len(rows) < 2:
-        raise ValueError(f"{path.name} 至少需要 2 筆有效資料")
+        raise ValueError("訓練或驗收資料至少需要 2 筆有效資料")
     return rows
-
 
 class CompletionOnlyCollator:
     """Pad token ids and labels independently; -100 labels are ignored by CE loss."""
@@ -91,17 +97,18 @@ def tokenise_example(example, tokenizer):
 def main():
     if not torch.cuda.is_available():
         raise RuntimeError("未偵測到 CUDA GPU；QLoRA 訓練需要相容的 NVIDIA CUDA 環境。")
-    if not TRAIN_PATH.is_file() or not EVAL_PATH.is_file():
+    if any(not path.is_file() for path in TRAIN_PATHS) or not EVAL_PATH.is_file():
         raise FileNotFoundError("找不到訓練或驗收資料；請先執行 scripts/validate_training_data.py。")
     from validate_training_data import main as validate_data
-    if validate_data() != 0:
-        raise RuntimeError("訓練資料驗證失敗，停止訓練。")
+    from validate_code_dataset import main as validate_code
+    if validate_data() != 0 or validate_code() != 0:
+        raise RuntimeError("訓練或程式碼資料驗證失敗，停止訓練。")
 
     print("[Kaptia] QLoRA 訓練開始")
     print(f"[Kaptia] 基礎模型：{MODEL_ID}")
     print(f"[Kaptia] GPU：{torch.cuda.get_device_name(0)}")
     print(f"[Kaptia] max_length={MAX_LENGTH}")
-    train_rows, eval_rows = load_examples(TRAIN_PATH), load_examples(EVAL_PATH)
+    train_rows, eval_rows = load_examples(TRAIN_PATHS), load_examples(EVAL_PATH)
 
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, use_fast=True)
     if tokenizer.pad_token is None:
