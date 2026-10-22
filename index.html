@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#080808">
+<meta name="description" content="Kaptia 本機文字助理控制台">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>Kaptia</title>
+<style>
+:root{color-scheme:dark;--bg:#080808;--panel:#101010;--panel2:#151515;--line:#292929;--muted:#909090;--white:#f5f5f5}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--white);font:14px/1.5 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;overflow-x:hidden}
+#ambient{position:fixed;inset:-25%;z-index:-2;pointer-events:none;filter:blur(55px);opacity:.19}
+.blob{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff 0,#aaa 16%,#555 35%,#151515 65%,transparent 72%);mix-blend-mode:screen;animation:drift 24s ease-in-out infinite alternate}
+.blob.one{width:55vw;height:55vw;top:2%;left:8%}.blob.two{width:44vw;height:44vw;right:4%;top:30%;animation-duration:31s;animation-delay:-9s}.blob.three{width:34vw;height:34vw;bottom:0;left:35%;animation-duration:27s;animation-delay:-14s}
+@keyframes drift{0%{transform:translate3d(-4%,2%,0) scale(.86)}50%{transform:translate3d(7%,-5%,0) scale(1.08)}100%{transform:translate3d(-2%,8%,0) scale(.96)}}
+body.thinking #ambient{opacity:.42;filter:blur(40px)}body.thinking .blob{animation-duration:5s}body.thinking .blob.two{animation-duration:7s}
+body.thinking .thinking-orbit{opacity:1;animation:spin 2.8s linear infinite}body.thinking .core{box-shadow:0 0 42px #fff4,0 0 100px #fff2;transform:scale(1.06)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.app{display:grid;grid-template-columns:238px minmax(0,1fr);min-height:100vh;max-width:1600px;margin:auto}
+aside{padding:24px 16px;border-right:1px solid #222;background:#080808cc;backdrop-filter:blur(20px);display:flex;flex-direction:column;gap:22px}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 8px 18px}.mark{width:30px;height:30px;border:1px solid #777;border-radius:10px;position:relative;overflow:hidden}.mark:after{content:"";position:absolute;inset:7px;border:1px solid #eee;border-radius:50%;box-shadow:0 0 15px #fff8}
+.brand b{letter-spacing:.16em;font-size:14px}.brand small{display:block;color:#777;font-size:10px;letter-spacing:.12em}
+.navlabel{font-size:10px;color:#666;letter-spacing:.16em;padding:0 10px 8px}.nav{display:grid;gap:5px}.nav button,.ghost{background:transparent;color:#aaa;border:1px solid transparent;text-align:left;border-radius:10px;padding:10px 12px;cursor:pointer;font:inherit}.nav button:hover,.nav button.active{background:#171717;color:#fff;border-color:#292929}
+.sidebottom{margin-top:auto;display:grid;gap:10px}.mini{padding:12px;border:1px solid #292929;border-radius:12px;background:#101010}.mini span{color:#777;font-size:11px}.mini strong{display:block;margin-top:5px;font-size:12px;font-weight:500}
+main{min-width:0;padding:24px clamp(18px,4vw,54px) 32px;display:flex;flex-direction:column}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #222;padding-bottom:18px}.eyebrow{color:#888;font-size:10px;letter-spacing:.18em}.status{display:flex;align-items:center;gap:8px;color:#aaa;font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:#888;box-shadow:0 0 10px #fff4}
+.pill{border:1px solid #333;border-radius:999px;padding:7px 11px;color:#bbb;background:#111;font-size:11px}
+.content{width:100%;max-width:900px;margin:clamp(30px,7vh,76px) auto 0}.hero{text-align:center}.core-wrap{height:110px;display:grid;place-items:center;position:relative;margin-bottom:25px}.core{width:62px;height:62px;border:1px solid #aaa;border-radius:50%;background:radial-gradient(circle at 35% 25%,#fff 0,#bdbdbd 9%,#555 24%,#141414 60%);transition:transform .5s,box-shadow .5s;position:relative}.thinking-orbit{position:absolute;width:88px;height:88px;border:1px solid #777;border-left-color:transparent;border-right-color:#eee;border-radius:50%;opacity:0;transition:opacity .3s}.thinking-orbit:after{content:"";position:absolute;top:7px;left:10px;width:5px;height:5px;background:white;border-radius:50%;box-shadow:0 0 12px white}
+h1{font-size:clamp(30px,4vw,46px);letter-spacing:-.05em;margin:0;font-weight:500}.subtitle{color:#888;margin:12px 0 28px}.prompt{display:flex;align-items:flex-end;gap:10px;padding:12px;border:1px solid #393939;background:#101010e8;border-radius:18px;box-shadow:0 12px 55px #0008}.prompt textarea{flex:1;resize:vertical;min-height:42px;max-height:180px;border:0;outline:0;background:transparent;color:#f5f5f5;font:inherit;padding:10px 8px}.prompt textarea::placeholder{color:#777}.send{border:1px solid #eee;background:#f3f3f3;color:#111;border-radius:12px;padding:10px 16px;font-weight:600;cursor:pointer}.send:disabled{opacity:.35;cursor:not-allowed}.hint{color:#666;font-size:11px;margin:12px 4px 0}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:26px}.card{border:1px solid #282828;border-radius:15px;padding:16px;background:#0e0e0edb;min-height:112px}.card h3{font-size:12px;font-weight:500;color:#ddd;margin:0 0 10px}.card p{margin:0;color:#858585;font-size:12px;overflow-wrap:anywhere}.card .value{color:#f3f3f3;font-size:14px;margin-top:6px}.result{white-space:pre-wrap;overflow-wrap:anywhere;margin:18px 0 0;padding:20px;border:1px solid #292929;border-radius:15px;background:#0d0d0d;display:none}.result.visible{display:block}.result .who{color:#888;font-size:10px;letter-spacing:.16em;margin-bottom:10px}.notice{margin-top:16px;padding:12px 14px;border-left:2px solid #777;color:#888;background:#111;font-size:12px}
+button:focus-visible,textarea:focus-visible{outline:2px solid white;outline-offset:3px}
+@media(max-width:760px){.app{grid-template-columns:1fr}aside{display:none}main{padding:18px 15px 24px}.content{margin-top:38px}.grid{grid-template-columns:1fr}.card{min-height:auto}.top{align-items:flex-start}.pill{white-space:nowrap}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}#ambient{display:none}}
+</style>
+</head>
+<body>
+<div id="ambient" aria-hidden="true"><div class="blob one"></div><div class="blob two"></div><div class="blob three"></div></div>
+<div class="app">
+<aside>
+  <div class="brand"><div class="mark"></div><div><b>KAPTIA</b><small>LOCAL LANGUAGE SYSTEM</small></div></div>
+  <div><div class="navlabel">WORKSPACE</div><nav class="nav"><button class="active" data-view="chat">◌　對話</button><button data-view="machine">▦　電腦配置</button><button data-view="repo">⌘　專案來源</button></nav></div>
+  <div class="sidebottom"><div class="mini"><span>執行方式</span><strong>Browser Workspace</strong></div><div class="mini"><span>語言引擎</span><strong id="engineSide">尚未連接本機引擎</strong></div></div>
+</aside>
+<main>
+  <header class="top"><div><div class="eyebrow">KAPTIA / PERSONAL WORKSPACE</div><div style="margin-top:5px;font-size:12px;color:#aaa">本機文字助理</div></div><div class="status"><span class="dot"></span><span id="statusText">介面就緒 · 引擎未連接</span></div></header>
+  <section class="content" id="chatView">
+    <div class="hero"><div class="core-wrap"><div class="core"></div><div class="thinking-orbit"></div></div><h1>有什麼需要處理？</h1><p class="subtitle">一個乾淨、直接的工作空間。</p></div>
+    <form id="chatForm" class="prompt"><textarea id="prompt" rows="1" placeholder="輸入訊息…（目前需要連接本機引擎才能生成回答）"></textarea><button class="send" id="sendBtn" type="submit">送出 ↑</button></form>
+    <div class="hint">Enter 送出 · Shift + Enter 換行</div>
+    <div class="result" id="result"><div class="who" id="resultWho">KAPTIA</div><div id="resultText"></div></div>
+    <div class="grid">
+      <div class="card"><h3>電腦配置</h3><p>只讀取瀏覽器允許提供的基本資訊</p><div class="value" id="machineSummary">尚未掃描</div></div>
+      <div class="card"><h3>專案來源</h3><p>讀取公開 GitHub 專案狀態</p><div class="value" id="repoSummary">尚未同步</div></div>
+      <div class="card"><h3>執行狀態</h3><p>不會假裝模型已啟動</p><div class="value" id="runtimeSummary">等待本機引擎</div></div>
+    </div>
+    <div class="notice">這是可安裝的網頁工作台。瀏覽器無法直接讀取整台電腦的完整硬體、檔案或執行程序；完整效能偵測需要你另外安裝並明確啟動本機代理程式。</div>
+  </section>
+  <section class="content" id="machineView" hidden>
+    <div class="eyebrow">LOCAL DEVICE / PERMISSION-BASED</div><h1 style="margin-top:12px">電腦配置</h1><p class="subtitle">點擊掃描，只讀取瀏覽器允許的資訊；不會讀取文件、程序清單或個人檔案。</p>
+    <button class="send" id="scanBtn" type="button">掃描可用配置</button>
+    <div class="grid" id="machineGrid">
+      <div class="card"><h3>處理器執行緒</h3><div class="value" id="cpuValue">未檢查</div></div>
+      <div class="card"><h3>記憶體提示</h3><div class="value" id="ramValue">瀏覽器可能不提供</div></div>
+      <div class="card"><h3>圖形加速</h3><div class="value" id="gpuValue">未檢查</div></div>
+      <div class="card"><h3>螢幕</h3><div class="value" id="screenValue">未檢查</div></div>
+      <div class="card"><h3>網路狀態</h3><div class="value" id="netValue">未檢查</div></div>
+      <div class="card"><h3>建議模式</h3><div class="value" id="profileValue">尚未分析</div></div>
+    </div>
+    <div class="notice" id="scanNotice">掃描只做前端可取得的粗略判斷，不會更改系統設定，也不會自動超頻或調整電源模式。</div>
+  </section>
+  <section class="content" id="repoView" hidden>
+    <div class="eyebrow">SOURCE / GITHUB</div><h1 style="margin-top:12px">專案來源</h1><p class="subtitle">從公開 GitHub 倉庫讀取版本資訊與 README；不會執行遠端程式碼。</p>
+    <div class="card"><h3>Repository</h3><div class="value"><a style="color:#fff" href="https://github.com/argusocean-wq/kaptia" target="_blank" rel="noreferrer">argusocean-wq/kaptia ↗</a></div><p id="repoDetail" style="margin-top:12px">尚未讀取</p><button class="ghost" id="syncBtn" style="margin-top:10px;border-color:#333">重新同步 GitHub 資訊</button></div>
+  </section>
+</main>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const showResult=(who,text)=>{$('resultWho').textContent=who;$('resultText').textContent=text;$('result').classList.add('visible')};
+document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b===btn));['chat','machine','repo'].forEach(v=>$(v+'View').hidden=v!==btn.dataset.view)}));
+$('chatForm').addEventListener('submit',e=>{e.preventDefault();const value=$('prompt').value.trim();if(!value)return;document.body.classList.add('thinking');$('statusText').textContent='正在準備請求';$('sendBtn').disabled=true;showResult('KAPTIA','目前這個 Pages 工作台尚未連接本機語言引擎，因此不會假裝已經生成回答。請先下載並啟動 Kaptia 本機引擎；連接介面完成後，訊息才會交由本機模型處理。');setTimeout(()=>{document.body.classList.remove('thinking');$('statusText').textContent='介面就緒 · 引擎未連接';$('sendBtn').disabled=false},900)});
+$('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chatForm').requestSubmit()}});
+function scan(){const cores=navigator.hardwareConcurrency||null;const mem=navigator.deviceMemory||null;const gl=document.createElement('canvas').getContext('webgl')||document.createElement('canvas').getContext('experimental-webgl');let gpu='瀏覽器未提供';if(gl){const ext=gl.getExtension('WEBGL_debug_renderer_info');gpu=ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'圖形資訊受瀏覽器保護'}$('cpuValue').textContent=cores?cores+' 個邏輯執行緒':'瀏覽器未提供';$('ramValue').textContent=mem?'約 '+mem+' GB（瀏覽器估計值）':'瀏覽器未提供';$('gpuValue').textContent=gpu;$('screenValue').textContent=screen.width+' × '+screen.height+' · DPR '+(devicePixelRatio||1);$('netValue').textContent=navigator.onLine?'目前連線中':'目前離線';let profile='一般模式';if((mem&&mem<=4)||(cores&&cores<=4))profile='輕量模式';else if(mem&&mem>=8&&cores&&cores>=8)profile='較高資源模式';$('profileValue').textContent=profile+'（粗略建議）';$('machineSummary').textContent=(cores?cores+' 執行緒':'硬體資訊有限')+' · '+profile;$('scanNotice').textContent='掃描完成。這些是瀏覽器可提供的估計資訊，不等於完整硬體診斷；GPU 名稱可能被隱藏，記憶體數字也可能經過取整。沒有修改任何系統設定。'}
+$('scanBtn').addEventListener('click',scan);
+async function syncRepo(){ $('repoSummary').textContent='讀取中…';$('repoDetail').textContent='正在連接 GitHub 公開 API…';try{const r=await fetch('https://api.github.com/repos/argusocean-wq/kaptia',{headers:{'Accept':'application/vnd.github+json'}});if(!r.ok)throw new Error('GitHub API HTTP '+r.status);const d=await r.json();$('repoSummary').textContent='已連線 · '+d.default_branch;$('repoDetail').textContent='預設分支：'+d.default_branch+' · 最近更新：'+(d.updated_at?new Date(d.updated_at).toLocaleString():'未知')+' · 公開專案。此頁只讀取專案中繼資料，不會在瀏覽器內安裝或執行 GitHub 程式碼。'}catch(e){$('repoSummary').textContent='同步失敗';$('repoDetail').textContent='無法取得 GitHub 資訊：'+e.message+'。請檢查網路或稍後重試。'}}
+$('syncBtn').addEventListener('click',syncRepo);syncRepo();
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script>
+</body></html>
