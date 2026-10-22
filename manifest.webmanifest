@@ -1,0 +1,11 @@
+{
+  "name": "Kaptia Local Workspace",
+  "short_name": "Kaptia",
+  "description": "Kaptia 本機文字助理工作台",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#080808",
+  "icons": []
+}
