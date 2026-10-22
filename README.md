@@ -26,7 +26,10 @@ Kaptia 是以繁體中文為預設的本機文字 AI 助理。執行時不依賴
 - `scripts/train_qlora.py`：QLoRA/LoRA 微調流程
 - `requirements.txt`：推論依賴
 - `requirements-train.txt`：訓練依賴
-- `training/seed_dataset.jsonl`：少量示範資料，僅用於管線起步
+- `training/seed_dataset.jsonl`：少量示範訓練資料，僅用於管線起步
+- `training/eval_dataset.jsonl`：獨立驗收資料，不應加入訓練集
+- `scripts/validate_training_data.py`：JSONL 欄位、重複項與 train/eval 洩漏檢查
+- `docs/KAPTIA_MODEL_PLAN.md`：Windows 訓練與 iPhone 本機推理的分工及驗收規格
 - `knowledge/PROJECT_CONTEXT.md`：專案知識起始文件
 - `artifacts/`：執行時產生的本機交付檔案
 
@@ -43,10 +46,13 @@ Kaptia 是以繁體中文為預設的本機文字 AI 助理。執行時不依賴
 ## 微調
 
 1. 執行 `scripts\\setup_train.bat`，並確認 PyTorch 與 CUDA 版本相容。
-2. 僅加入具備使用權、品質審核且去除個資的資料到 `training/seed_dataset.jsonl`；每行一個 JSON 物件，欄位為 `instruction`、`input`、`output`。
-3. 在虛擬環境中執行 `python scripts\\train_qlora.py`。
-4. 訓練 adapter 預設寫入 `outputs/kaptia-language-qlora/adapter`。聊天程式會在此 adapter 存在時嘗試載入。
-5. 先以獨立測試題評估回覆品質，再決定是否保留 adapter。示範資料量少，不足以證明能力提升。
+2. 只把具備使用權、品質審核且去除個資的資料放進 `training/seed_dataset.jsonl`；每行一個 JSON 物件，欄位為 `instruction`、`input`、`output`。
+3. 先執行 `python scripts\\validate_training_data.py`，確認訓練集與驗收集沒有指令重疊。
+4. 在虛擬環境中執行 `python scripts\\train_qlora.py`。流程會使用 assistant 回答 token 作為訓練目標，並在每個 epoch 評估保留集。
+5. 訓練 adapter 預設寫入 `outputs/kaptia-language-qlora/adapter`，指標寫入 `outputs/kaptia-language-qlora/metrics.json`。聊天程式會在此 adapter 存在時嘗試載入。
+6. 使用固定的獨立題目比較基礎模型與 adapter，並人工檢查回答。示範資料量少，不足以證明能力提升。
+
+雙端設計、iPhone Safari 的模型相容性與未完成項目請見 [`docs/KAPTIA_MODEL_PLAN.md`](docs/KAPTIA_MODEL_PLAN.md)。Windows 訓練成功不代表 PEFT adapter 可直接在 Safari 執行；手機端需另外驗證 ONNX/瀏覽器模型與本機知識檢索。
 
 ## 已知限制與驗收狀態
 
