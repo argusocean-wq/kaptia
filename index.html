@@ -161,8 +161,12 @@ $('chatForm').addEventListener('submit',async e=>{
     const answer=Array.isArray(generated)?(generated.slice().reverse().find(m=>m&&m.role==='assistant')||generated[generated.length-1]||{}).content:String(generated||'模型沒有回傳文字。');
     showResult('QWEN · 本機生成',answer||'模型沒有回傳文字。');
   }catch(err){showResult('KAPTIA · 錯誤','本機生成失敗：'+(err&&err.message?err.message:String(err)));}
-  finally{document.body.classList.remove('thinking');$('statusText').textContent='Qwen 本機模型就緒';$('sendBtn').disabled=false;}
+  finally{document.body.classList.remove('thinking');$('statusText').textContent='Qwen 本機模型就緒';$('sendBtn').disabled=!qwenPipe;}
 });
+const promptBox=$('prompt');
+function resizePrompt(){promptBox.style.height='auto';promptBox.style.height=Math.min(promptBox.scrollHeight,120)+'px';}
+promptBox.addEventListener('input',resizePrompt,{passive:true});
+promptBox.addEventListener('focus',()=>{if(window.matchMedia('(max-width:760px)').matches)setTimeout(()=>promptBox.scrollIntoView({block:'nearest',behavior:'smooth'}),120)});
 if(localStorage.getItem('kaptia-qwen2.5-0.5b-instruct-ready')==='1'){
   modelStatus('偵測到先前啟用過 Qwen；正在嘗試從瀏覽器快取載入。若快取被系統清除，可能需要重新下載。');
   $('modelBtn').textContent='重新載入模型';
