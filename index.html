@@ -28,7 +28,49 @@ main{min-width:0;padding:24px clamp(18px,4vw,54px) 32px;display:flex;flex-direct
 .content{width:100%;max-width:900px;margin:clamp(30px,7vh,76px) auto 0}.hero{text-align:center}.core-wrap{height:110px;display:grid;place-items:center;position:relative;margin-bottom:25px}.core{width:62px;height:62px;border:1px solid #aaa;border-radius:50%;background:radial-gradient(circle at 35% 25%,#fff 0,#bdbdbd 9%,#555 24%,#141414 60%);transition:transform .5s,box-shadow .5s;position:relative}.thinking-orbit{position:absolute;width:88px;height:88px;border:1px solid #777;border-left-color:transparent;border-right-color:#eee;border-radius:50%;opacity:0;transition:opacity .3s}.thinking-orbit:after{content:"";position:absolute;top:7px;left:10px;width:5px;height:5px;background:white;border-radius:50%;box-shadow:0 0 12px white}
 h1{font-size:clamp(30px,4vw,46px);letter-spacing:-.05em;margin:0;font-weight:500}.subtitle{color:#888;margin:12px 0 28px}.prompt{display:flex;align-items:flex-end;gap:10px;padding:12px;border:1px solid #393939;background:#101010e8;border-radius:18px;box-shadow:0 12px 55px #0008}.prompt textarea{flex:1;resize:vertical;min-height:42px;max-height:180px;border:0;outline:0;background:transparent;color:#f5f5f5;font:inherit;padding:10px 8px}.prompt textarea::placeholder{color:#777}.send{border:1px solid #eee;background:#f3f3f3;color:#111;border-radius:12px;padding:10px 16px;font-weight:600;cursor:pointer}.send:disabled{opacity:.35;cursor:not-allowed}.hint{color:#666;font-size:11px;margin:12px 4px 0}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:26px}.card{border:1px solid #282828;border-radius:15px;padding:16px;background:#0e0e0edb;min-height:112px}.card h3{font-size:12px;font-weight:500;color:#ddd;margin:0 0 10px}.card p{margin:0;color:#858585;font-size:12px;overflow-wrap:anywhere}.card .value{color:#f3f3f3;font-size:14px;margin-top:6px}.result{white-space:pre-wrap;overflow-wrap:anywhere;margin:18px 0 0;padding:20px;border:1px solid #292929;border-radius:15px;background:#0d0d0d;display:none}.result.visible{display:block}.result .who{color:#888;font-size:10px;letter-spacing:.16em;margin-bottom:10px}.notice{margin-top:16px;padding:12px 14px;border-left:2px solid #777;color:#888;background:#111;font-size:12px}
 button:focus-visible,textarea:focus-visible{outline:2px solid white;outline-offset:3px}
-@media(max-width:760px){.app{grid-template-columns:1fr}aside{display:none}main{padding:18px 15px 24px}.content{margin-top:38px}.grid{grid-template-columns:1fr}.card{min-height:auto}.top{align-items:flex-start}.pill{white-space:nowrap}}
+.mobile-nav{display:none}
+@media(max-width:760px){
+  html{scroll-padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+  body{font-size:15px;padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+  .app{display:block;min-height:100dvh}
+  aside{display:none}
+  main{padding:14px 14px calc(22px + env(safe-area-inset-bottom))}
+  .top{padding:8px 2px 14px;gap:8px}
+  .top .eyebrow{font-size:9px;letter-spacing:.12em}
+  .status{font-size:10px;text-align:right;max-width:46%}
+  .content{margin:24px auto 0}
+  #chatView.content{margin-top:20px}
+  .hero .core-wrap{height:68px;margin-bottom:14px}
+  .core{width:48px;height:48px}
+  .thinking-orbit{width:66px;height:66px}
+  h1{font-size:clamp(27px,8vw,36px);line-height:1.15}
+  .subtitle{font-size:13px;margin:9px 0 20px}
+  .model-panel{padding:12px!important;margin-bottom:10px!important}
+  .model-panel strong{font-size:13px!important}
+  #modelBtn{min-height:42px;padding:10px 12px}
+  .prompt{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom));z-index:5;gap:6px;padding:8px;border-radius:16px;box-shadow:0 8px 28px #000b;background:#101010f5;backdrop-filter:blur(18px)}
+  .prompt textarea{min-height:44px;max-height:120px;font-size:16px;padding:10px 7px}
+  .send{min-height:44px;padding:10px 13px;white-space:nowrap}
+  .hint{font-size:10px;line-height:1.5;margin:8px 3px}
+  .result{padding:15px;margin-top:14px;font-size:14px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:18px}
+  .card{padding:12px;min-height:100px;border-radius:13px}
+  .card h3{font-size:11px}
+  .card p{font-size:11px;line-height:1.4}
+  .card .value{font-size:12px;overflow-wrap:anywhere}
+  .notice{font-size:11px;line-height:1.55;margin-top:12px}
+  .mobile-nav{position:fixed;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;left:0;right:0;bottom:0;z-index:20;padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-top:1px solid #292929;background:#080808ed;backdrop-filter:blur(22px)}
+  .mobile-nav button{min-height:46px;border:1px solid transparent;border-radius:12px;background:transparent;color:#888;font:inherit;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+  .mobile-nav button.active{color:#fff;background:#171717;border-color:#303030}
+  #machineView .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #repoView .card{min-height:auto}
+}
+@media(max-width:360px){
+  main{padding-left:10px;padding-right:10px}
+  .grid,#machineView .grid{grid-template-columns:1fr}
+  .model-panel>div:first-child{align-items:flex-start}
+  #modelBtn{width:100%}
+}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}#ambient{display:none}}
 </style>
 </head>
@@ -42,6 +84,7 @@ button:focus-visible,textarea:focus-visible{outline:2px solid white;outline-offs
 </aside>
 <main>
   <header class="top"><div><div class="eyebrow">KAPTIA / PERSONAL WORKSPACE</div><div style="margin-top:5px;font-size:12px;color:#aaa">本機文字助理</div></div><div class="status"><span class="dot"></span><span id="statusText">介面就緒 · 引擎未連接</span></div></header>
+  <nav class="mobile-nav" aria-label="主要導覽"><button class="active" data-view="chat" type="button"><span>◌</span><span>對話</span></button><button data-view="machine" type="button"><span>▦</span><span>裝置</span></button><button data-view="repo" type="button"><span>⌘</span><span>專案</span></button></nav>
   <section class="content" id="chatView">
     <div class="hero"><div class="core-wrap"><div class="core"></div><div class="thinking-orbit"></div></div><h1>有什麼需要處理？</h1><p class="subtitle">一個乾淨、直接的工作空間。</p></div>
     <div class="model-panel" style="margin:0 0 12px;padding:14px;border:1px solid #292929;border-radius:14px;background:#101010"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong style="font-size:12px;font-weight:500">Qwen 本機輕量模型</strong><div id="modelStatus" style="color:#888;font-size:11px;margin-top:4px">首次使用需下載模型；不會在未經你點擊前自動下載。</div></div><button class="ghost" id="modelBtn" type="button" style="border-color:#444;white-space:nowrap">下載／載入模型</button></div><progress id="modelProgress" max="100" value="0" style="width:100%;height:5px;margin-top:12px;display:none;accent-color:#eee"></progress><div id="modelProgressText" style="font-size:11px;color:#777;margin-top:5px" aria-live="polite"></div></div>
@@ -110,10 +153,10 @@ async function loadQwen(){
 $('modelBtn').addEventListener('click',()=>loadQwen());
 $('chatForm').addEventListener('submit',async e=>{
   e.preventDefault();const value=$('prompt').value.trim();if(!value)return;
-  if(!qwenPipe){showResult('KAPTIA','請先點擊「下載／載入模型」。首次下載模型可能需要數百 MB，建議使用 Wi-Fi。');return;}
+  if(!qwenPipe){showResult('KAPTIA','請先點擊「下載／載入模型」。首次下載模型可能需要數百 MB，建議使用 Wi-Fi；載入期間請保持此頁開啟。');return;}
   document.body.classList.add('thinking');$('statusText').textContent='Qwen 正在本機生成';$('sendBtn').disabled=true;
   try{
-    const out=await qwenPipe([{role:'user',content:value}],{max_new_tokens:160,do_sample:true,temperature:0.7});
+    const mobile=window.matchMedia('(max-width: 760px)').matches;\n    const out=await qwenPipe([{role:'user',content:value}],{max_new_tokens:mobile?96:160,do_sample:true,temperature:0.7});
     const generated=out&&out[0]?out[0].generated_text:null;
     const answer=Array.isArray(generated)?(generated.slice().reverse().find(m=>m&&m.role==='assistant')||generated[generated.length-1]||{}).content:String(generated||'模型沒有回傳文字。');
     showResult('QWEN · 本機生成',answer||'模型沒有回傳文字。');
@@ -130,7 +173,7 @@ function scan(){const cores=navigator.hardwareConcurrency||null;const mem=naviga
 $('scanBtn').addEventListener('click',scan);
 async function syncRepo(){ $('repoSummary').textContent='讀取中…';$('repoDetail').textContent='正在連接 GitHub 公開 API…';try{const r=await fetch('https://api.github.com/repos/argusocean-wq/kaptia',{headers:{'Accept':'application/vnd.github+json'}});if(!r.ok)throw new Error('GitHub API HTTP '+r.status);const d=await r.json();$('repoSummary').textContent='已連線 · '+d.default_branch;$('repoDetail').textContent='預設分支：'+d.default_branch+' · 最近更新：'+(d.updated_at?new Date(d.updated_at).toLocaleString():'未知')+' · 公開專案。此頁只讀取專案中繼資料，不會在瀏覽器內安裝或執行 GitHub 程式碼。'}catch(e){$('repoSummary').textContent='同步失敗';$('repoDetail').textContent='無法取得 GitHub 資訊：'+e.message+'。請檢查網路或稍後重試。'}}
 $('syncBtn').addEventListener('click',syncRepo);syncRepo();
-if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));\nif(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent))document.documentElement.classList.add('touch-device');
 </script>
 </body></html>
 <!-- Kaptia Pages redeploy trigger: remove stale deployment after custom-domain cleanup. -->
