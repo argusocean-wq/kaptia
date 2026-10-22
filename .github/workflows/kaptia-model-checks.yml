@@ -1,0 +1,32 @@
+name: Kaptia model-data checks
+
+on:
+  push:
+    paths:
+      - "scripts/**"
+      - "training/**"
+      - ".github/workflows/kaptia-model-checks.yml"
+  pull_request:
+    paths:
+      - "scripts/**"
+      - "training/**"
+      - ".github/workflows/kaptia-model-checks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-training-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile Python scripts
+        run: python -m compileall -q scripts
+      - name: Validate training/evaluation data
+        run: python scripts/validate_training_data.py
