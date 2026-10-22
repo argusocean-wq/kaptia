@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TRAIN_PATHS = [ROOT / "training" / "seed_dataset.jsonl", ROOT / "training" / "code_seed_dataset.jsonl"]
 EVAL_PATH = ROOT / "training" / "eval_dataset.jsonl"
 OUTPUT_DIR = ROOT / "outputs" / "kaptia-language-qlora"
-MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "Qwen/Qwen2.5-Coder-7B-Instruct")
 MAX_LENGTH = int(os.environ.get("KAPTIA_MAX_LENGTH", "1024"))
 
 
