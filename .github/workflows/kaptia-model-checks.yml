@@ -36,6 +36,8 @@ jobs:
         run: python -m compileall -q scripts
       - name: Validate training/evaluation data
         run: python scripts/validate_training_data.py
+      - name: Validate code evaluation data
+        run: python scripts/validate_code_dataset.py
       - name: Test local knowledge retrieval
         run: python -m unittest scripts/test_knowledge_index.py
       - name: Build local knowledge pack
