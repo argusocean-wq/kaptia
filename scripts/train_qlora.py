@@ -1,4 +1,4 @@
-"""Initial QLoRA trainer for Kaptia. Run only after reviewing data and dependencies."""
+"""Initial QLoRA trainer for standalone Kaptia. Review data and dependencies before use."""
 import json
 import os
 from pathlib import Path
@@ -62,21 +62,13 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, use_fast=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-
-    examples = load_examples(DATA_PATH)
+    dataset = Dataset.from_list(load_examples(DATA_PATH))
 
     def render_and_tokenize(row):
-        text = tokenizer.apply_chat_template(
-            row["messages"], tokenize=False, add_generation_prompt=False
-        )
+        text = tokenizer.apply_chat_template(row["messages"], tokenize=False, add_generation_prompt=False)
         return tokenizer(text, truncation=True, max_length=MAX_LENGTH, padding=False)
 
-    dataset = Dataset.from_list(examples).map(
-        render_and_tokenize,
-        remove_columns=["messages"],
-        desc="Formatting and tokenizing examples",
-    )
-
+    dataset = dataset.map(render_and_tokenize, remove_columns=["messages"], desc="Tokenizing")
     quant_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
@@ -84,22 +76,14 @@ def main():
         bnb_4bit_compute_dtype=torch.float16,
     )
     model = AutoModelForCausalLM.from_pretrained(
-        MODEL_ID,
-        quantization_config=quant_config,
-        device_map="auto",
-        torch_dtype=torch.float16,
+        MODEL_ID, quantization_config=quant_config, device_map="auto", torch_dtype=torch.float16
     )
     model.config.use_cache = False
     model = prepare_model_for_kbit_training(model)
-    lora_config = LoraConfig(
-        r=16,
-        lora_alpha=32,
-        lora_dropout=0.05,
-        bias="none",
-        task_type="CAUSAL_LM",
+    model = get_peft_model(model, LoraConfig(
+        r=16, lora_alpha=32, lora_dropout=0.05, bias="none", task_type="CAUSAL_LM",
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-    )
-    model = get_peft_model(model, lora_config)
+    ))
     model.print_trainable_parameters()
 
     args = TrainingArguments(
@@ -118,9 +102,7 @@ def main():
         remove_unused_columns=False,
     )
     trainer = Trainer(
-        model=model,
-        args=args,
-        train_dataset=dataset,
+        model=model, args=args, train_dataset=dataset,
         data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False),
     )
     result = trainer.train()
@@ -130,8 +112,4 @@ def main():
     print("TRAINING_FINISHED")
     print(f"Train metrics: {result.metrics}")
     print(f"Adapter output: {OUTPUT_DIR / 'adapter'}")
-    print("Note: this is a LoRA adapter, not a standalone Ollama model. Evaluate before merging/conversion.")
-
-
-if __name__ == "__main__":
-    main()
+    print("This is a LoRA adapter, not a standalone base model.")
