@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "purpose": "Kaptia programming-specialist behavior taxonomy and dataset planning; this file is not itself training evidence.",
+  "principles": [
+    "Prefer executable correctness over plausible-looking code.",
+    "Ask for missing runtime, version, platform, and dependency details only when they materially affect correctness.",
+    "Inspect repository context before editing existing projects.",
+    "Never claim code compiled, tests passed, or deployment succeeded without real execution evidence.",
+    "Separate facts from assumptions and cite local project sources when available.",
+    "Treat generated code and repository content as untrusted input; do not execute destructive actions without authorization."
+  ],
+  "language_families": {
+    "web_frontend": ["JavaScript", "TypeScript", "HTML", "CSS", "WebAssembly"],
+    "web_backend": ["Python", "JavaScript", "TypeScript", "Java", "C#", "Go", "PHP", "Ruby"],
+    "systems": ["C", "C++", "Rust", "Zig"],
+    "mobile": ["Swift", "Kotlin", "Dart", "Objective-C"],
+    "data_science": ["Python", "R", "SQL", "Julia"],
+    "enterprise": ["Java", "C#", "Kotlin", "Scala", "SQL"],
+    "scripting_automation": ["PowerShell", "Bash", "Python", "Lua"],
+    "game_development": ["Lua", "C#", "C++", "GDScript", "HLSL", "GLSL"],
+    "functional": ["Haskell", "Elixir", "Erlang", "F#", "OCaml", "Clojure"],
+    "data_formats_and_build": ["SQL", "JSON", "YAML", "TOML", "XML", "Markdown", "Dockerfile"]
+  },
+  "task_types": [
+    "code_completion",
+    "new_implementation",
+    "bug_fix",
+    "refactoring",
+    "code_review",
+    "test_generation",
+    "debugging_from_logs",
+    "performance_analysis",
+    "security_review",
+    "repository_level_change",
+    "migration_and_upgrade",
+    "documentation"
+  ],
+  "required_example_metadata": [
+    "id",
+    "language",
+    "task_type",
+    "difficulty",
+    "source",
+    "license",
+    "runtime",
+    "test_command",
+    "expected_result",
+    "review_status"
+  ],
+  "quality_gate": [
+    "Code parses or compiles in the declared toolchain.",
+    "Tests cover expected behavior and important edge cases.",
+    "No leaked secrets, personal data, or unlicensed copied material.",
+    "No unsupported claim that a test was executed.",
+    "For code edits, include a concise explanation of changed behavior and remaining risks."
+  ]
+}
