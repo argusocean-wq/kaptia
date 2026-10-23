@@ -1,0 +1,76 @@
+name: Kaptia scratch pretraining segment
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "scripts/kaptia_scratch_model.py"
+      - "scripts/kaptia_prepare_text_corpus.py"
+      - "scripts/train_kaptia_scratch.py"
+      - "training/bootstrap_dialogue_seed.jsonl"
+      - ".github/workflows/kaptia-scratch-pretraining.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kaptia-scratch-pretraining
+  cancel-in-progress: false
+
+jobs:
+  train-from-random-init:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU PyTorch
+        run: python -m pip install --upgrade pip torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Prepare bundled text corpus
+        run: |
+          python scripts/kaptia_prepare_text_corpus.py --input training/bootstrap_dialogue_seed.jsonl --output-dir training/scratch_corpus --val-fraction 0.10 --min-document-bytes 8
+          cat training/scratch_corpus/metadata.json
+      - name: Train Kaptia from random initialization
+        run: |
+          python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 1000 --eval-interval 100 --eval-batches 2 --batch-size 4 --block-size 128 --layers 2 --heads 2 --width 64 --context-length 256 --device cpu
+      - name: Verify checkpoint provenance and training progress
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import torch
+
+          root = Path("outputs/kaptia-scratch-pretrain")
+          checkpoint = torch.load(root / "latest_checkpoint.pt", map_location="cpu", weights_only=False)
+          assert checkpoint.get("initialization") == "random"
+          assert checkpoint.get("pretrained_source") is None
+          assert int(checkpoint.get("step", 0)) >= 1000
+          log = [json.loads(line) for line in (root / "training_log.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+          assert log, "training log is empty"
+          assert all("train" in row and "validation" in row for row in log)
+          print(json.dumps({
+              "status": "scratch_training_segment_verified",
+              "step": checkpoint["step"],
+              "initialization": checkpoint["initialization"],
+              "pretrained_source": checkpoint["pretrained_source"],
+              "metrics": checkpoint.get("metrics"),
+              "log_records": len(log),
+          }, ensure_ascii=False, indent=2))
+          PY
+      - name: Upload checkpoint, manifest, logs, and corpus metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaptia-scratch-bootstrap-${{ github.run_number }}
+          path: |
+            outputs/kaptia-scratch-pretrain/latest_checkpoint.pt
+            outputs/kaptia-scratch-pretrain/best_checkpoint.pt
+            outputs/kaptia-scratch-pretrain/manifest.json
+            outputs/kaptia-scratch-pretrain/training_log.jsonl
+            training/scratch_corpus/metadata.json
+          if-no-files-found: error
+          retention-days: 30
