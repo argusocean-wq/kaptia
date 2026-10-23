@@ -18,7 +18,7 @@ Then it starts genuine gradient training from random initialization:
 python scripts\train_kaptia_scratch.py --data-dir training\scratch_corpus --output-dir outputs\kaptia-scratch-pretrain --steps 10000 --eval-interval 500 --eval-batches 2 --batch-size 4 --block-size 128 --layers 2 --heads 2 --width 64 --context-length 256 --device auto
 ```
 
-This small configuration is only a bootstrap. It is not a claim that the resulting model has useful general conversation skills.
+This small configuration is only a bootstrap. It is not a claim that the resulting model has useful general conversation skills. For known prompts, the CLI may use an explicitly labeled lookup from the bundled dialogue seed if generated text is poor; this lookup is not neural generation. For unknown prompts, the CLI may abstain rather than present low-quality text as a reliable answer.
 
 ## Larger corpus training
 
