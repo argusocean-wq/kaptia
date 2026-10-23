@@ -1,8 +1,0 @@
-# Suggested clean environment: Python 3.10 or 3.11 + compatible NVIDIA CUDA driver.
-# Exact versions may need adjustment for the installed CUDA/PyTorch combination.
-torch>=2.3.1
-transformers>=4.45.0,<5
-datasets>=3.0.0
-peft>=0.13.0
-accelerate>=1.0.0
-bitsandbytes>=0.44.0
