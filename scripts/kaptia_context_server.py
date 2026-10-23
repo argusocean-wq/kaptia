@@ -77,17 +77,22 @@ class Handler(BaseHTTPRequestHandler):
             self._send(400, {"error": "empty_selection", "message": "請先選取一段程式碼。"})
             return
 
-        # ByteTokenizer uses one token per UTF-8 byte. Keep the prompt bounded to the
-        # model context and explicitly disclose that a tiny bootstrap model may fail.
-        prompt_text = (
-            f"檔案:{file_name}\n問題:{question}\n"
-            f"前文:{before}\n選取程式碼:\n{selection}\n後文:{after}\n"
-            "請用繁體中文解釋，指出不確定之處。"
-        )
-        prompt_bytes = prompt_text.encode("utf-8")
+        # ByteTokenizer consumes one token per UTF-8 byte. Reserve room for the
+        # question and selected code first; nearby context is only secondary.
         context_length = self.server.model.config.context_length
-        prompt_bytes = prompt_bytes[-max(24, context_length - 96):]
-        prompt_text = prompt_bytes.decode("utf-8", errors="ignore")
+        question_bytes = question.encode("utf-8")[:72]
+        question = question_bytes.decode("utf-8", errors="ignore")
+        fixed = f"檔案:{file_name[:40]}\n問:{question}\n選取程式碼:\n"
+        fixed_bytes = fixed.encode("utf-8")
+        available = max(24, context_length - len(fixed_bytes) - 20)
+        selection_bytes = selection.encode("utf-8")[:available]
+        selection = selection_bytes.decode("utf-8", errors="ignore")
+        # Keep only a small context tail if there is still room after the selected code.
+        remaining = max(0, context_length - len((fixed + selection).encode("utf-8")) - 24)
+        context = ""
+        if remaining and before:
+            context = ("\n前文:" + before[-remaining:]) if before else ""
+        prompt_text = fixed + selection + context + "\n請用繁體中文解釋。"
         try:
             answer = self.server.generate([{"role": "user", "content": prompt_text}],
                                           max_new_tokens=min(160, max(32, context_length // 2)),
