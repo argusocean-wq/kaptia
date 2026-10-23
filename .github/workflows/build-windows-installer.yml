@@ -5,6 +5,10 @@ on:
     branches: ["main"]
     paths:
       - "installer/**"
+      - "scripts/**"
+      - "vscode-extension/**"
+      - "training/bootstrap_dialogue_seed.jsonl"
+      - "requirements.txt"
   workflow_dispatch:
 
 permissions:
@@ -33,13 +37,13 @@ jobs:
       - name: Publish versioned GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: kaptia-build-7
-          name: Kaptia Windows Installer 7
+          tag_name: kaptia-build-${{ github.run_number }}
+          name: Kaptia Windows Installer ${{ github.run_number }}
           body: |
             Rolling Windows installer built from the current installer source.
-            The installer downloads the current Kaptia source and prepares the local Python runtime.
-            It trains a small Kaptia scratch checkpoint from random initialization using the bundled seed corpus.
-            This bootstrap checkpoint is not a general-capability language model.
+            The installer prepares the local Python runtime and trains a small Kaptia scratch checkpoint from random initialization.
+            If VS Code is installed, it also installs the '問問 Kaptia' right-click extension.
+            The bootstrap checkpoint is experimental and not a general-capability language model.
           target_commitish: ${{ github.sha }}
           files: dist/Kaptia-Setup.exe
           overwrite_files: true
