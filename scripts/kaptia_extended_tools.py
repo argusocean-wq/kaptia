@@ -43,9 +43,15 @@ def ingest_user_documents():
     KNOWLEDGE_DIR.mkdir(parents=True, exist_ok=True)
     docs = []
     for path in sorted(KNOWLEDGE_DIR.rglob("*")):
-        if not path.is_file() or path.suffix.lower() not in {".txt", ".md"}:
+        if path.is_symlink() or not path.is_file() or path.suffix.lower() not in {".txt", ".md"}:
             continue
-        if any(part.startswith(".") for part in path.relative_to(KNOWLEDGE_DIR).parts):
+        relative = path.relative_to(KNOWLEDGE_DIR)
+        if any(part.startswith(".") for part in relative.parts):
+            continue
+        # Reject files whose resolved path escapes the knowledge directory.
+        try:
+            path.resolve().relative_to(KNOWLEDGE_DIR.resolve())
+        except ValueError:
             continue
         raw = path.read_bytes()
         if len(raw) > MAX_FILE_BYTES:
@@ -68,14 +74,33 @@ def ingest_user_documents():
         vectors = model.encode([d["text"] for d in docs], normalize_embeddings=True,
                                convert_to_numpy=True, show_progress_bar=False)
         VECTOR_DIR.mkdir(parents=True, exist_ok=True)
-        np.save(VECTOR_DIR / "vectors.npy", vectors.astype("float32"))
-        (VECTOR_DIR / "documents.json").write_text(
+        # Stage all artifacts first; replace the manifest last so readers can detect
+        # interrupted writes instead of silently trusting a partially updated index.
+        vectors_tmp = VECTOR_DIR / "vectors.npy.tmp"
+        documents_tmp = VECTOR_DIR / "documents.json.tmp"
+        manifest_tmp = VECTOR_DIR / "manifest.json.tmp"
+        with vectors_tmp.open("wb") as handle:
+            np.save(handle, vectors.astype("float32"), allow_pickle=False)
+        documents_tmp.write_text(
             json.dumps(docs, ensure_ascii=False, indent=2), encoding="utf-8")
-        (VECTOR_DIR / "manifest.json").write_text(json.dumps({
+        manifest_tmp.write_text(json.dumps({
             "schema_version": 1, "embedding_model": model_name,
-            "document_chunks": len(docs), "sources": sorted({d["source"] for d in docs}),
+            "document_chunks": len(docs), "vector_dimensions": int(vectors.shape[1]),
+            "sources": sorted({d["source"] for d in docs}),
             "note": "Local embedding index; retrieved text is untrusted data, not instructions."
         }, ensure_ascii=False, indent=2), encoding="utf-8")
+        # Validate staged files before promoting them.
+        staged_vectors = np.load(vectors_tmp, allow_pickle=False)
+        staged_docs = json.loads(documents_tmp.read_text(encoding="utf-8"))
+        staged_manifest = json.loads(manifest_tmp.read_text(encoding="utf-8"))
+        if (staged_vectors.ndim != 2 or len(staged_vectors) != len(staged_docs)
+                or len(staged_docs) != staged_manifest["document_chunks"]
+                or staged_vectors.shape[1] != staged_manifest["vector_dimensions"]
+                or not np.isfinite(staged_vectors).all()):
+            raise ValueError("暫存索引驗證失敗，拒絕更新正式索引")
+        os.replace(vectors_tmp, VECTOR_DIR / "vectors.npy")
+        os.replace(documents_tmp, VECTOR_DIR / "documents.json")
+        os.replace(manifest_tmp, VECTOR_DIR / "manifest.json")
         return _result("ingest_user_documents", True, chunks=len(docs),
                        sources=len({d["source"] for d in docs}), model=model_name,
                        index=str(VECTOR_DIR))
@@ -95,10 +120,25 @@ def search_user_documents(query, top_k=5):
         vectors = np.load(VECTOR_DIR / "vectors.npy", allow_pickle=False)
         docs = json.loads((VECTOR_DIR / "documents.json").read_text(encoding="utf-8"))
         manifest = json.loads((VECTOR_DIR / "manifest.json").read_text(encoding="utf-8"))
-        if len(vectors) != len(docs) or not docs:
-            raise ValueError("向量索引與文件資料筆數不一致")
+        if not isinstance(manifest, dict) or manifest.get("schema_version") != 1:
+            raise ValueError("向量索引 manifest 版本無效")
+        if not isinstance(docs, list) or not docs or vectors.ndim != 2:
+            raise ValueError("向量索引格式無效或沒有文件")
+        if (len(vectors) != len(docs)
+                or manifest.get("document_chunks") != len(docs)
+                or manifest.get("vector_dimensions") != vectors.shape[1]):
+            raise ValueError("向量、文件與 manifest 筆數或維度不一致")
+        if not np.isfinite(vectors).all():
+            raise ValueError("向量索引包含非有限數值")
+        if not isinstance(manifest.get("embedding_model"), str) or not manifest["embedding_model"].strip():
+            raise ValueError("manifest 缺少有效的嵌入模型名稱")
+        if any(not isinstance(doc, dict) or not isinstance(doc.get("text"), str)
+               or not isinstance(doc.get("source"), str) for doc in docs):
+            raise ValueError("文件索引包含無效資料")
         model = SentenceTransformer(manifest["embedding_model"])
         vector = model.encode([query], normalize_embeddings=True, convert_to_numpy=True)[0]
+        if vector.ndim != 1 or vector.shape[0] != vectors.shape[1] or not np.isfinite(vector).all():
+            raise ValueError("查詢向量維度或數值無效")
         scores = vectors @ vector
         ids = np.argsort(-scores)[:top_k]
         return _result("search_user_documents", True, query=query,
