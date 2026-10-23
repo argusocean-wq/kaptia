@@ -88,24 +88,12 @@ def _normalise_plan(data):
     return data
 
 def plan_task(generate, user_text):
-    raw = generate(
-        [{"role": "system", "content": PLANNER_PROMPT},
-         {"role": "user", "content": user_text}],
-        max_new_tokens=500, temperature=0.1,
-    )
+    """Compatibility wrapper; Kaptia owns workflow routing without a model round-trip."""
     try:
-        plan = _normalise_plan(_extract_json(raw))
-    except Exception:
-        plan = {
-            "task_size": "short", "output_type": "text",
-            "needs_research": False, "needs_file": False,
-            "outline": [], "assumptions": ["規劃器輸出無法解析，改採簡短文字回覆"],
-            "checks": ["遵守安全、版權、隱私與事實誠信原則"],
-        }
-    if plan["task_size"] == "long" and not plan["outline"]:
-        plan["outline"] = ["目的與背景", "主要內容", "限制與注意事項", "結論"]
-    plan["outline"] = [str(x) for x in plan["outline"][:12]]
-    return plan
+        from kaptia_orchestrator import build_plan
+    except ImportError:
+        from scripts.kaptia_orchestrator import build_plan
+    return build_plan(user_text)
 
 def _load_format_guide(output_type):
     # Local Markdown skill guides only; this does not parse arbitrary user DOCX/PPTX/PDF files.
