@@ -1,61 +1,24 @@
-# Kaptia 專案知識模型：Windows + iPhone 驗證方案
+# Kaptia 從零訓練與本機推理計畫
 
-## 目標與邊界
+## 硬性限制
 
-- Windows：作為可選的 QLoRA 訓練端；需相容的 NVIDIA CUDA GPU 與足夠顯存/磁碟。此儲存庫不會替使用者的電腦自動訓練。
-- iPhone：Kaptia 網頁繼續以 Transformers.js/ONNX 支援的量化模型本機推理；不得假設 Python PEFT adapter 能直接在 Safari 載入。
-- 專案知識：優先以版本化 Markdown/JSON 文件做本機檢索（RAG）並提供來源；LoRA 用來調整回答習慣，不應當作唯一或權威的知識庫。
-- 雙端無伺服器要求：若要求手機與 Windows 兩端都離線、同時更新知識，需將經審核的知識包匯出/匯入兩端；沒有常駐主機或同步服務時，不會自動同步。
-- 目前只建立資料驗證、訓練與評估流程；沒有模型已訓練、已轉 ONNX 或 iPhone 已驗收的宣稱。
+- 不使用任何成品模型權重、第三方預訓練 Tokenizer、Ollama 模型、蒸餾模型或 LoRA/QLoRA adapter。
+- 所有生成權重必須來自 `KaptiaScratchLM` 隨機初始化後的梯度更新。
+- 使用者的原始文字語料只可在確認擁有或取得訓練授權、清除個資與機密後加入。
+- 訓練日誌、checkpoint manifest、validation loss 與生成評估必須保存；未實際執行的測試不得標為成功。
 
-## 目錄
+## Windows 訓練流程
 
-- `training/seed_dataset.jsonl`: 起始訓練範例，仍需擴充與人工審核。
-- `training/eval_dataset.jsonl`: 保留的驗收題，禁止併入訓練資料。
-- `scripts/validate_training_data.py`: 檢查通用資料格式、重複項與 train/eval 洩漏。
-- `training/code_seed_dataset.jsonl`: 多語言程式碼起始訓練樣本，仍需人工審查。
-- `training/code_eval_dataset.jsonl`: 程式碼保留驗收題，不應加入訓練。
-- `training/code_languages.json`: 語言分類、任務類型及品質門檻。
-- `scripts/validate_code_dataset.py`: 驗收資料結構檢查。\n- `scripts/build_knowledge_index.py`: 從明確允許的 Markdown 來源建立帶有來源路徑、章節、SHA-256 的本機知識包。\n- `scripts/query_knowledge.py`: 不依賴外部套件的離線詞彙檢索基線；分數只代表詞彙匹配，不代表事實正確率。\n- `scripts/test_knowledge_index.py`: 知識檢索的基本測試。
-- `scripts/train_qlora.py`: 只計算 assistant 回覆 token 的訓練流程，並在每個 epoch 評估。
-- `scripts/export_kaptia_model.py`: 將已訓練的 PEFT adapter 合併成獨立 Hugging Face 權重；不等於 ONNX 匯出，也不代表 Safari 已相容。
-- 訓練輸出位於 `outputs/kaptia-language-qlora/`，不應將模型權重或個人資料提交至 Git。
+1. 執行 `scripts\\setup_train.bat` 安裝 PyTorch。
+2. 將可合法訓練的原始文字放入獨立資料夾，執行 `scripts\\kaptia_prepare_text_corpus.py`。
+3. 執行 `scripts\\train_kaptia_scratch.py` 從隨機初始化訓練。
+4. 續訓時使用同一架構與 Kaptia 自己的 `latest_checkpoint.pt`；來源標記不符時必須停止。
+5. 檢查訓練／驗證 loss、perplexity、訓練步數、資料 hash 和未見過的生成案例。
 
-## Windows 執行順序
+## 網頁與 iPhone
 
-1. 使用 Python 3.10/3.11，安裝與 NVIDIA 驅動相容的 PyTorch/CUDA。
-2. 安裝 `requirements-train.txt`。
-3. 執行 `python scripts/validate_training_data.py` 及 `python scripts/validate_code_dataset.py`；先解決所有錯誤。
-4. 執行 `python scripts/train_qlora.py`。若沒有 CUDA，流程會停止並回報，而不是假裝開始訓練。
-5. 保存終端日誌、基礎模型識別、資料版本、訓練參數、評估指標與 adapter 檔案雜湊。
-6. 在未參與訓練的驗收題上比較 base 與 adapter，人工檢查專案事實是否準確、是否引用正確來源、是否捏造未執行結果。
+網頁／Safari 端的模型格式與執行能力是獨立工程項目。不能假設 PyTorch checkpoint 可直接在瀏覽器或 iPhone 執行；需要另行實作模型匯出、量化、記憶體測試、離線快取與真機驗收。在這些工作完成前，不宣稱網頁或 iPhone 已具備 Kaptia scratch model 推論能力。
 
-## 驗收門檻
+## 起步語料的限制
 
-- 資料驗證命令成功，train/eval 沒有重複題。
-- 訓練成功結束並保存 adapter、訓練指標與評估指標。
-- 評估資料的 loss/指標實際產生，沒有 NaN/Inf。
-- 人工盲評 base 與 adapter 的同一組題目；不以 training loss 下降單獨判定品質提升。
-- iPhone 端另行驗證模型下載、離線快取、Safari 記憶體、回覆品質與本機知識檢索。這些不能由 Windows 訓練成功代替。
-- 轉換到 ONNX/瀏覽器格式是獨立工作，只有在成功轉換並於實機端到端測試後才可標記完成。
-
-## 匯出獨立 Kaptia 權重（訓練完成後）
-
-1. 先完成訓練並確認 `outputs/kaptia-language-qlora/adapter/adapter_config.json` 存在。
-2. 執行 `python scripts/export_kaptia_model.py`。此步驟會載入完整基礎模型，可能需要大量 RAM、VRAM 與磁碟空間；若記憶體不足會失敗，不應將失敗視為完成。
-3. 預設輸出到 `outputs/kaptia-standalone/`。若輸出目錄已存在且非空，腳本會停止以避免覆寫。
-4. 檢查 `kaptia_model_manifest.json`、權重檔與 tokenizer。基礎模型及 adapter 的授權條款必須在散布前另外確認。
-5. 這個輸出是 Transformers 格式的獨立權重，不是 ONNX；不得直接將它當成可在 iPhone Safari 載入的檔案。ONNX 轉換、量化、下載校驗與真機測試仍是獨立工作。
-6. 執行 `python scripts/evaluate_adapter.py` 並人工盲評保留驗收集；合併成功只證明匯出步驟完成，不代表 Kaptia 品質已改善。
-
-
-## OptiLLM-inspired inference-time reasoning
-
-Kaptia now has an original, lightweight local reasoning wrapper in `scripts/kaptia_reasoning.py`. It is inspired by the general idea of spending bounded inference-time compute, not a copy of OptiLLM and not an implementation of its full algorithm catalogue.
-
-- Default: `KAPTIA_REASONING_MODE=single` — one generation, preserving current latency and memory use.
-- Optional: set `KAPTIA_REASONING_MODE=best_of_n` and `KAPTIA_REASONING_CANDIDATES=2` or `3` before launching Kaptia. It generates up to three candidate answers and uses the same model to select one.
-- Candidate count is clamped to 2–3. The selector is not an independent verifier; all candidates can share the same model's blind spots. Existing Kaptia review and constitution checks remain necessary.
-- This increases inference calls and latency, and may increase memory/energy use. It does not guarantee higher accuracy and does not train model weights.
-- This path applies to the Python pipeline only. It does not modify the Transformers.js browser inference path or establish iPhone Safari compatibility.
-- Run `python -m unittest scripts.test_kaptia_reasoning` to test the wrapper logic. This unit test does not test real model quality.
+`training/bootstrap_dialogue_seed.jsonl` 只供管線起步與流程測試，資料量不足以訓練通用語言模型。要改善理解與回答，需要持續增加合法授權的高品質原始語料與大量訓練計算；不能把 1,000 步起步訓練描述為完成。
