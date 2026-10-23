@@ -35,7 +35,7 @@ Kaptia 加入了原創的輕量候選比較策略，參考「推論時增加有�
 
 ## Kaptia 模型自主化
 
-Kaptia 是完整模型系統的產品名稱，Qwen 只是目前可替換的底層基礎模型。模型自主化路線、訓練階段、權重來源透明度與發布門檻見 [`docs/KAPTIA_MODEL_AUTONOMY_ROADMAP.md`](docs/KAPTIA_MODEL_AUTONOMY_ROADMAP.md)。品牌名稱不等於獨立訓練權重；目前仍需完成實際訓練、盲評、模型轉換及 Windows/iPhone 端到端驗收。
+Kaptia 是完整模型系統的產品名稱。程式預設已移除 Qwen，改用可替換的 HuggingFaceTB/SmolLM2-1.7B-Instruct 作為文字生成後端；它仍是第三方基礎模型，不代表 Kaptia 已有獨立預訓練權重。模型自主化路線、訓練階段、權重來源透明度與發布門檻見 [`docs/KAPTIA_MODEL_AUTONOMY_ROADMAP.md`](docs/KAPTIA_MODEL_AUTONOMY_ROADMAP.md)。品牌名稱不等於獨立訓練權重；目前仍需完成實際訓練、盲評、模型轉換及 Windows/iPhone 端到端驗收。
 
 ## 核心憲法與安全邊界
 
@@ -75,7 +75,7 @@ Kaptia 是完整模型系統的產品名稱，Qwen 只是目前可替換的底�
 1. 安裝 Python 3.10/3.11 與 NVIDIA 顯卡驅動（如要使用 GPU）。
 2. Clone 或下載此儲存庫。
 3. 雙擊 `scripts\\open_kaptia.bat`。
-4. 首次啟動會建立虛擬環境、安裝依賴並下載語言模型檔案，請預留足夠磁碟空間。
+4. 首次啟動會建立虛擬環境、安裝依賴並下載預設語言模型檔案（HuggingFaceTB/SmolLM2-1.7B-Instruct），請預留足夠磁碟空間。
 5. 後續再次雙擊啟動即可。
 
 若使用離線模式，請先完成一次完整模型下載，再設定環境變數 `KAPTIA_LOCAL_ONLY=1`。沒有快取完整模型時，離線載入會明確報錯。
