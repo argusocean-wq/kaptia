@@ -226,12 +226,52 @@ class Installer(tk.Tk):
             subprocess.run([str(venv_python), "-m", "pip", "install", "-r",
                             str(app_dir / "requirements.txt")], check=True, cwd=app_dir)
 
+            # Prepare the bundled text corpus and train Kaptia's own scratch model.
+            # The checkpoint is stored outside app_dir so reinstalling the app does not erase progress.
+            model_dir = ROOT / "model-data" / "kaptia-scratch-pretrain"
+            corpus_dir = app_dir / "training" / "scratch_corpus"
+            model_dir.mkdir(parents=True, exist_ok=True)
+            self.update_ui("Preparing text corpus…",
+                           "Using the bundled dialogue seed only. No pretrained model or tokenizer is downloaded.",
+                           "CORPUS", 100, True)
+            train_bin = corpus_dir / "train.bin"
+            if not train_bin.is_file():
+                subprocess.run([
+                    str(venv_python), str(app_dir / "scripts" / "kaptia_prepare_text_corpus.py"),
+                    "--input", str(app_dir / "training" / "bootstrap_dialogue_seed.jsonl"),
+                    "--output-dir", str(corpus_dir), "--val-fraction", "0.10",
+                    "--min-document-bytes", "8"
+                ], check=True, cwd=app_dir)
+
+            latest_checkpoint = model_dir / "latest_checkpoint.pt"
+            best_checkpoint = model_dir / "best_checkpoint.pt"
+            train_command = [
+                str(venv_python), str(app_dir / "scripts" / "train_kaptia_scratch.py"),
+                "--data-dir", str(corpus_dir), "--output-dir", str(model_dir),
+                "--steps", "1000", "--eval-interval", "100", "--eval-batches", "2",
+                "--batch-size", "4", "--block-size", "128", "--layers", "2",
+                "--heads", "2", "--width", "64", "--context-length", "256", "--device", "auto"
+            ]
+            if latest_checkpoint.is_file():
+                train_command.extend(["--resume", str(latest_checkpoint)])
+                self.update_ui("Continuing Kaptia training…",
+                               "Resuming the previous random-initialization checkpoint for 1,000 additional steps.",
+                               "TRAINING", 100, True)
+            else:
+                self.update_ui("Training Kaptia from scratch…",
+                               "Initializing every model weight randomly. The small bundled corpus is only a starter dataset.",
+                               "TRAINING", 100, True)
+            subprocess.run(train_command, check=True, cwd=app_dir)
+
             self.update_ui("Launching Kaptia…",
-                           "First launch may download several gigabytes of model weights from the model host.",
+                           "Loading Kaptia's own scratch-trained checkpoint. No finished model weights are used.",
                            "COMPLETE", 100, False)
             self.after(800, self.destroy)
+            child_env = os.environ.copy()
+            child_env["KAPTIA_SCRATCH_CHECKPOINT"] = str(best_checkpoint)
             subprocess.Popen([str(venv_python), str(app_dir / "scripts" / "chat.py")],
-                             cwd=app_dir, creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0))
+                             cwd=app_dir, env=child_env,
+                             creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0))
         except Exception as exc:
             self.update_ui("Setup could not finish",
                            "Check your network connection, available disk space, and Python installation.",
