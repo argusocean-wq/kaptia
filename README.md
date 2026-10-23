@@ -37,7 +37,7 @@ Kaptia 加入了原創的輕量候選比較策略，參考「推論時增加有�
 
 Kaptia 只允許使用 `scripts/kaptia_scratch_model.py` 定義、從隨機初始化開始訓練的自有 Transformer。聊天入口拒絕來源不明的 checkpoint，不會載入 SmolLM2、Qwen、Llama、Gemma、Ollama 成品模型、第三方 Tokenizer、蒸餾權重或 LoRA/QLoRA adapter。
 
-Windows 安裝器會使用 `training/bootstrap_dialogue_seed.jsonl` 建立小型起步語料，從隨機權重訓練 10,000 步；續訓資料保存在本機 Kaptia 資料目錄。這個小型語料只能驗證訓練與推論管線，不能證明已具備通用對話能力。對應內建示範問題時，聊天入口可能使用有明確標籤的示範語料檢索；未知問題若模型輸出品質不足，會明確回報尚未具備可靠回答能力，而不是把亂碼當成答案。完整規格見 [從零預訓練文件](docs/KAPTIA_SCRATCH_PRETRAINING.md) 與 [自主化路線圖](docs/KAPTIA_MODEL_AUTONOMY_ROADMAP.md)。
+Windows 安裝器的原始碼已設定首次訓練 10,000 步，並把續訓 checkpoint 保存在本機 Kaptia 資料目錄。注意：目前公開 Release 的安裝程式是不可變的舊版二進位檔，首次只訓練 1,000 步；安裝後執行 `scripts\\setup_train.bat`，即可從同一份本機 checkpoint 繼續訓練。這個小型語料只能驗證訓練與推論管線，不能證明已具備通用對話能力。對應內建示範問題時，聊天入口可能使用有明確標籤的示範語料檢索；未知問題若模型輸出品質不足，會明確回報尚未具備可靠回答能力，而不是把亂碼當成答案。完整規格見 [從零預訓練文件](docs/KAPTIA_SCRATCH_PRETRAINING.md) 與 [自主化路線圖](docs/KAPTIA_MODEL_AUTONOMY_ROADMAP.md)。
 
 ## 核心憲法與安全邊界
 
