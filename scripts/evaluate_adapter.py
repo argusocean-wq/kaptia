@@ -13,10 +13,10 @@ from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 ROOT = Path(__file__).resolve().parents[1]
-EVAL_PATH = ROOT / "training" / "eval_dataset.jsonl"
+EVAL_PATHS = [ROOT / "training" / "eval_dataset.jsonl", ROOT / "training" / "code_eval_dataset.jsonl"]
 ADAPTER_DIR = ROOT / "outputs" / "kaptia-language-qlora" / "adapter"
 OUT_PATH = ROOT / "outputs" / "kaptia-language-qlora" / "comparison.jsonl"
-MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "Qwen/Qwen2.5-Coder-7B-Instruct")
 MAX_NEW_TOKENS = int(os.environ.get("KAPTIA_EVAL_MAX_NEW_TOKENS", "256"))
 
 
@@ -48,7 +48,7 @@ def generate(tokenizer, model, instruction, extra_input=""):
     if extra_input.strip():
         user_text += "\n\n補充資料：\n" + extra_input.strip()
     messages = [
-        {"role": "system", "content": "你是 Kaptia 的專案知識助理，使用繁體中文。不得捏造程式實作、測試結果或來源；資料不足時要明確說明。"},
+        {"role": "system", "content": "你是 Kaptia，預設使用臺灣繁體中文。你是嚴謹的程式設計與專案助理；先理解需求、明確假設、給出可驗證方案，不捏造測試結果、來源或工具執行。中華民國與中華人民共和國不可混淆。"},
         {"role": "user", "content": user_text},
     ]
     prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
@@ -87,7 +87,7 @@ def main():
     base_model = AutoModelForCausalLM.from_pretrained(MODEL_ID, **common)
     base_model.eval()
     for index, row in enumerate(rows, 1):
-        base_answers.append(generate(tokenizer, base_model, row["instruction"], row.get("input", "")))
+        base_answers.append(generate(tokenizer, base_model, row["instruction"], row.get("input", "") + (("\\n驗收標準： " + row["expected_result"]) if row.get("expected_result") else "")))
         print(f"[base {index}/{len(rows)}]")
     del base_model
     if torch.cuda.is_available():
@@ -100,7 +100,7 @@ def main():
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with OUT_PATH.open("w", encoding="utf-8") as out:
         for index, (row, base_answer) in enumerate(zip(rows, base_answers), 1):
-            adapter_answer = generate(tokenizer, adapter_model, row["instruction"], row.get("input", ""))
+            adapter_answer = generate(tokenizer, adapter_model, row["instruction"], row.get("input", "") + (("\\n驗收標準： " + row["expected_result"]) if row.get("expected_result") else ""))
             record = {
                 "index": index,
                 "instruction": row["instruction"],
@@ -115,7 +115,7 @@ def main():
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     print(f"[Kaptia Eval] output={OUT_PATH}")
-    print(f"[Kaptia Eval] eval_sha256={sha256(EVAL_PATH)}")
+    for eval_path in EVAL_PATHS:\n        print(f"[Kaptia Eval] {eval_path.name}_sha256={sha256(eval_path)}")
     print("[Kaptia Eval] 未自動判定 adapter 較好；請逐題人工評分並記錄理由。")
 
 
