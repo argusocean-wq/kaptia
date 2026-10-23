@@ -55,8 +55,8 @@ def _publish_index_pointer(index_id):
     VECTOR_DIR.mkdir(parents=True, exist_ok=True)
     pointer_tmp = VECTOR_DIR / ("CURRENT.tmp-" + uuid.uuid4().hex)
     try:
-        with pointer_tmp.open("x", encoding="ascii", newline="\\n") as handle:
-            handle.write(index_id + "\\n")
+        with pointer_tmp.open("x", encoding="ascii", newline="\n") as handle:
+            handle.write(index_id + "\n")
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(pointer_tmp, CURRENT_INDEX_FILE)
