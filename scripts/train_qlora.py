@@ -24,6 +24,10 @@ EVAL_PATHS = [ROOT / "training" / "eval_dataset.jsonl", ROOT / "training" / "cod
 OUTPUT_DIR = ROOT / "outputs" / "kaptia-language-qlora"
 MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "Qwen/Qwen2.5-Coder-7B-Instruct")
 MAX_LENGTH = int(os.environ.get("KAPTIA_MAX_LENGTH", "1024"))
+TRAIN_BATCH_SIZE = int(os.environ.get("KAPTIA_BATCH_SIZE", "1"))
+GRAD_ACCUM_STEPS = int(os.environ.get("KAPTIA_GRAD_ACCUM_STEPS", "8"))
+SAVE_STEPS = int(os.environ.get("KAPTIA_SAVE_STEPS", "50"))
+RESUME_FROM_CHECKPOINT = os.environ.get("KAPTIA_RESUME_FROM_CHECKPOINT", "auto").strip().lower()
 
 
 def load_examples(paths):
@@ -110,6 +114,7 @@ def main():
     print(f"[Kaptia] 基礎模型：{MODEL_ID}")
     print(f"[Kaptia] GPU：{torch.cuda.get_device_name(0)}")
     print(f"[Kaptia] max_length={MAX_LENGTH}")
+    print(f"[Kaptia] batch_size={TRAIN_BATCH_SIZE}; grad_accum={GRAD_ACCUM_STEPS}")
     train_rows, eval_rows = load_examples(TRAIN_PATHS), load_examples(EVAL_PATHS)
 
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, use_fast=True)
@@ -141,18 +146,22 @@ def main():
     ))
     model.print_trainable_parameters()
 
+    use_bf16 = bool(torch.cuda.is_bf16_supported())
     args = TrainingArguments(
         output_dir=str(OUTPUT_DIR),
         num_train_epochs=float(os.environ.get("KAPTIA_EPOCHS", "2")),
-        per_device_train_batch_size=1,
+        per_device_train_batch_size=TRAIN_BATCH_SIZE,
         per_device_eval_batch_size=1,
-        gradient_accumulation_steps=8,
+        gradient_accumulation_steps=GRAD_ACCUM_STEPS,
         learning_rate=2e-4,
-        logging_steps=1,
-        save_strategy="epoch",
-        eval_strategy="epoch",
+        logging_steps=max(1, int(os.environ.get("KAPTIA_LOGGING_STEPS", "5"))),
+        save_strategy="steps",
+        save_steps=SAVE_STEPS,
+        eval_strategy="steps",
+        eval_steps=SAVE_STEPS,
         save_total_limit=2,
-        fp16=True,
+        fp16=not use_bf16,
+        bf16=use_bf16,
         gradient_checkpointing=True,
         optim="paged_adamw_8bit",
         report_to="none",
@@ -163,7 +172,20 @@ def main():
         model=model, args=args, train_dataset=train_ds, eval_dataset=eval_ds,
         data_collator=CompletionOnlyCollator(tokenizer),
     )
-    result = trainer.train()
+    resume_checkpoint = None
+    if RESUME_FROM_CHECKPOINT == "auto":
+        checkpoints = []
+        if OUTPUT_DIR.is_dir():
+            for path in OUTPUT_DIR.glob("checkpoint-*"):
+                suffix = path.name.removeprefix("checkpoint-")
+                if suffix.isdigit() and (path / "trainer_state.json").is_file():
+                    checkpoints.append((int(suffix), path))
+        if checkpoints:
+            resume_checkpoint = str(max(checkpoints, key=lambda item: item[0])[1])
+    elif RESUME_FROM_CHECKPOINT not in ("", "false", "none", "0"):
+        resume_checkpoint = RESUME_FROM_CHECKPOINT
+    print(f"[Kaptia] resume_from_checkpoint={resume_checkpoint or False}")
+    result = trainer.train(resume_from_checkpoint=resume_checkpoint)
     eval_metrics = trainer.evaluate()
     adapter_path = OUTPUT_DIR / "adapter"
     trainer.save_model(str(adapter_path))
@@ -171,7 +193,9 @@ def main():
     trainer.save_state()
     metrics = {"base_model": MODEL_ID, "train_metrics": result.metrics, "eval_metrics": eval_metrics,
                "train_examples": len(train_rows), "eval_examples": len(eval_rows), "eval_files": [str(p.relative_to(ROOT)) for p in EVAL_PATHS],
-               "max_length": MAX_LENGTH, "epochs": args.num_train_epochs}
+               "max_length": MAX_LENGTH, "epochs": args.num_train_epochs,
+               "train_batch_size": TRAIN_BATCH_SIZE, "gradient_accumulation_steps": GRAD_ACCUM_STEPS,
+               "bf16": use_bf16, "resume_from_checkpoint": resume_checkpoint}
     (OUTPUT_DIR / "metrics.json").write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
     print("[Kaptia] 訓練結束；請注意這不代表品質一定提升")
     print(json.dumps(metrics, ensure_ascii=False, indent=2))
