@@ -20,7 +20,7 @@ from transformers import (
 
 ROOT = Path(__file__).resolve().parents[1]
 TRAIN_PATHS = [ROOT / "training" / "seed_dataset.jsonl", ROOT / "training" / "code_seed_dataset.jsonl"]
-EVAL_PATH = ROOT / "training" / "eval_dataset.jsonl"
+EVAL_PATHS = [ROOT / "training" / "eval_dataset.jsonl", ROOT / "training" / "code_eval_dataset.jsonl"]
 OUTPUT_DIR = ROOT / "outputs" / "kaptia-language-qlora"
 MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "Qwen/Qwen2.5-Coder-7B-Instruct")
 MAX_LENGTH = int(os.environ.get("KAPTIA_MAX_LENGTH", "1024"))
@@ -97,7 +97,7 @@ def tokenise_example(example, tokenizer):
 def main():
     if not torch.cuda.is_available():
         raise RuntimeError("未偵測到 CUDA GPU；QLoRA 訓練需要相容的 NVIDIA CUDA 環境。")
-    if any(not path.is_file() for path in TRAIN_PATHS) or not EVAL_PATH.is_file():
+    if any(not path.is_file() for path in TRAIN_PATHS + EVAL_PATHS):
         raise FileNotFoundError("找不到訓練或驗收資料；請先執行 scripts/validate_training_data.py。")
     from validate_training_data import main as validate_data
     from validate_code_dataset import main as validate_code
@@ -108,7 +108,7 @@ def main():
     print(f"[Kaptia] 基礎模型：{MODEL_ID}")
     print(f"[Kaptia] GPU：{torch.cuda.get_device_name(0)}")
     print(f"[Kaptia] max_length={MAX_LENGTH}")
-    train_rows, eval_rows = load_examples(TRAIN_PATHS), load_examples(EVAL_PATH)
+    train_rows, eval_rows = load_examples(TRAIN_PATHS), load_examples(EVAL_PATHS)
 
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, use_fast=True)
     if tokenizer.pad_token is None:
@@ -168,7 +168,7 @@ def main():
     tokenizer.save_pretrained(str(adapter_path))
     trainer.save_state()
     metrics = {"base_model": MODEL_ID, "train_metrics": result.metrics, "eval_metrics": eval_metrics,
-               "train_examples": len(train_rows), "eval_examples": len(eval_rows),
+               "train_examples": len(train_rows), "eval_examples": len(eval_rows), "eval_files": [str(p.relative_to(ROOT)) for p in EVAL_PATHS],
                "max_length": MAX_LENGTH, "epochs": args.num_train_epochs}
     (OUTPUT_DIR / "metrics.json").write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
     print("[Kaptia] 訓練結束；請注意這不代表品質一定提升")
