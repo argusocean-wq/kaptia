@@ -154,7 +154,7 @@ def verify_output(generate, user_text, plan, content):
             "review_available": False,
         }
 
-def _run_preflight_tools(user_text):
+def _run_preflight_tools(generate, user_text):
     """Deterministic local tool routing; only named, allowlisted tools can execute."""
     try:
         from kaptia_tools import dispatch_tool
@@ -164,6 +164,26 @@ def _run_preflight_tools(user_text):
         except ImportError:
             return [], ""
     events, snippets = [], []
+    # Model-directed calls are bounded and dispatched only through the registry.
+    try:
+        from kaptia_agent_loop import run_tool_loop
+    except ImportError:
+        try:
+            from scripts.kaptia_agent_loop import run_tool_loop
+        except ImportError:
+            run_tool_loop = None
+    if run_tool_loop is not None:
+        try:
+            agent_result = run_tool_loop(generate, user_text, dispatch_tool, max_steps=4)
+            events.extend(agent_result["events"])
+            if agent_result["context"]:
+                snippets.append(agent_result["context"])
+            lower = user_text.casefold()
+            check_requested = any(term in lower for term in ("跑測試", "執行測試", "執行檢查", "驗證程式", "run tests", "run checks"))
+            if agent_result["results"] and not check_requested:
+                return events, "\\n".join(snippets)
+        except Exception as exc:
+            events.append(f"模型工具迴圈未能執行：{type(exc).__name__}: {exc}")
     lower = user_text.casefold()
     project_terms = ("kaptia", "這個專案", "專案目前", "專案上下文", "專案記憶",
                      "訓練流程", "知識庫", "倉庫", "repository", "repo")
@@ -195,7 +215,7 @@ def _run_preflight_tools(user_text):
 def run_workflow(generate, user_text):
     events = ["1. 理解原始需求", "2. 檢查本機格式技能指南", "3. 判斷是否需要外部查證",
               "4. 決定輸出形式", "5. 選擇本機語言引擎並建立計畫"]
-    tool_events, tool_context = _run_preflight_tools(user_text)
+    tool_events, tool_context = _run_preflight_tools(generate, user_text)
     events.extend(tool_events)
     plan = plan_task(generate, user_text)
     if plan["needs_research"]:
