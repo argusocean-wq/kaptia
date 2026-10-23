@@ -4,7 +4,7 @@ Kaptia's chat path must use only the decoder-only Transformer defined in `script
 
 ## Local bootstrap
 
-The Windows launcher uses the bundled `training/bootstrap_dialogue_seed.jsonl` only to validate the end-to-end training and chat path. This corpus is intentionally small and is not sufficient for general language competence.
+The source Windows launcher uses the bundled `training/bootstrap_dialogue_seed.jsonl` only to validate the end-to-end training and chat path. This corpus is intentionally small and is not sufficient for general language competence. The currently published immutable installer binary is older and performs a 1,000-step initial segment; run `scripts\\setup_train.bat` after installation to continue training the same local checkpoint. The installer source is configured for 10,000 initial steps, but the immutable public release asset has not been replaced.
 
 The launcher prepares it with:
 
