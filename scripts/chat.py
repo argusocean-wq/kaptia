@@ -4,8 +4,12 @@ No pretrained model IDs, external tokenizer, adapter, or network model download 
 """
 from __future__ import annotations
 
+import codecs
+import json
 import os
+import re
 import sys
+from difflib import SequenceMatcher
 from pathlib import Path
 
 import torch
@@ -72,7 +76,25 @@ def build_generator(tokenizer, model):
                 context = ids[:, -model.config.context_length:]
                 logits = model(context)["logits"][:, -1, :]
                 logits = logits / max(0.15, float(temperature))
-                k = min(40, logits.shape[-1])
+                # Byte-level sampling must preserve valid UTF-8, otherwise Chinese text
+                # degrades into replacement characters even when the model predicts bytes.
+                valid_ids = []
+                decoder_factory = codecs.getincrementaldecoder("utf-8")
+                prefix = bytes(generated)
+                for candidate in range(256):
+                    decoder = decoder_factory("strict")
+                    try:
+                        decoder.decode(prefix, final=False)
+                        decoder.decode(bytes([candidate]), final=False)
+                        valid_ids.append(candidate)
+                    except UnicodeDecodeError:
+                        continue
+                if not valid_ids:
+                    raise RuntimeError("No valid UTF-8 continuation token exists.")
+                valid_mask = torch.zeros(logits.shape[-1], dtype=torch.bool, device=device)
+                valid_mask[valid_ids] = True
+                logits = logits.masked_fill(~valid_mask.unsqueeze(0), float("-inf"))
+                k = min(40, len(valid_ids))
                 values, indices = torch.topk(logits, k=k, dim=-1)
                 probabilities = F.softmax(values, dim=-1)
                 selected = indices.gather(-1, torch.multinomial(probabilities, 1))
