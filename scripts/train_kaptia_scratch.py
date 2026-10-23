@@ -108,9 +108,12 @@ def main() -> None:
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         start_step = int(checkpoint.get("step", 0))
         best_val = float(checkpoint.get("best_validation_loss", checkpoint.get("metrics", {}).get("validation", {}).get("loss", float("inf"))))
-        if checkpoint.get("corpus_fingerprint") != corpus_fingerprint:
-            print("[WARN] Corpus fingerprint changed or missing; resetting best-validation comparison for the new corpus.")
+        saved_fingerprint = checkpoint.get("corpus_fingerprint")
+        if saved_fingerprint is not None and saved_fingerprint != corpus_fingerprint:
+            print("[WARN] Corpus fingerprint changed; resetting best-validation comparison for the new corpus.")
             best_val = float("inf")
+        elif saved_fingerprint is None:
+            print("[WARN] Legacy checkpoint has no corpus fingerprint; preserving its prior best-validation baseline.")
         if start_step < 0:
             parser.error("Checkpoint has an invalid negative step.")
         # Restore RNG states so resumed sampling follows the saved training trajectory.
