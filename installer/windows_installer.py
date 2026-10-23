@@ -186,28 +186,51 @@ class Installer(tk.Tk):
             for name in required:
                 package.write(extension_dir / name, "extension/" + name)
 
-        candidates = [
-            shutil.which("code"),
-            str(Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Microsoft VS Code" / "bin" / "code.cmd"),
-            str(Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Microsoft VS Code" / "bin" / "code.cmd"),
+        local = Path(os.environ.get("LOCALAPPDATA", str(Path.home())))
+        program_files = Path(os.environ.get("ProgramFiles", "C:/Program Files"))
+        editors = [
+            ("Cursor", shutil.which("cursor"), [
+                local / "Programs" / "Cursor" / "resources" / "app" / "bin" / "cursor.cmd",
+                local / "Programs" / "Cursor" / "bin" / "cursor.cmd",
+            ]),
+            ("VS Code", shutil.which("code"), [
+                local / "Programs" / "Microsoft VS Code" / "bin" / "code.cmd",
+                program_files / "Microsoft VS Code" / "bin" / "code.cmd",
+            ]),
         ]
-        code_cmd = next((item for item in candidates if item and (Path(item).is_file() or shutil.which(item))), None)
-        if not code_cmd:
-            self.update_ui("Kaptia installed", f"VS Code was not detected. The editor extension is ready at {vsix_path}; install it later from VS Code Extensions > … > Install from VSIX.", "EDITOR", 100, False)
+        detected = []
+        for name, command, paths in editors:
+            candidate = command or next((str(path) for path in paths if path.is_file()), None)
+            if candidate and candidate not in [item[1] for item in detected]:
+                detected.append((name, candidate))
+        if not detected:
+            self.update_ui("Kaptia installed", f"Cursor/VS Code was not detected. Extension package: {vsix_path}. To install later, use the editor's Extensions menu > Install from VSIX.", "EDITOR", 100, False)
             return
-        self.update_ui("Installing editor integration…",
-                       "Adding the '問問 Kaptia' right-click command to VS Code. No code is sent to a cloud service.",
-                       "EDITOR", 100, True)
-        result = subprocess.run([code_cmd, "--install-extension", str(vsix_path), "--force"],
-                                cwd=app_dir, capture_output=True, text=True, timeout=120)
-        if result.returncode == 0:
-            self.update_ui("Editor integration installed",
-                           "In VS Code, select code, right-click, then choose '問問 Kaptia'.",
-                           "EDITOR", 100, False)
+
+        installed = []
+        failures = []
+        for name, command in detected:
+            self.update_ui("Installing editor integration…",
+                           f"Adding '問問 Kaptia' to {name}. Code remains on this computer; no cloud model is called.",
+                           "EDITOR", 100, True)
+            try:
+                result = subprocess.run([command, "--install-extension", str(vsix_path), "--force"],
+                                         cwd=app_dir, capture_output=True, text=True, timeout=120)
+                if result.returncode == 0:
+                    installed.append(name)
+                else:
+                    detail = (result.stderr or result.stdout or "editor did not confirm installation").strip()[-350:]
+                    failures.append(f"{name}: {detail}")
+            except Exception as exc:
+                failures.append(f"{name}: {type(exc).__name__}: {exc}")
+        if installed:
+            detail = "已安裝至 " + "、".join(installed) + "。選取程式碼後按右鍵，選「問問 Kaptia」。答案仍是實驗性模型輸出，請自行核對。"
+            if failures:
+                detail += "；其他編輯器安裝失敗：" + " | ".join(failures)
+            self.update_ui("Editor integration ready", detail, "EDITOR", 100, False)
         else:
-            detail = (result.stderr or result.stdout or "VS Code did not confirm extension installation.").strip()[-700:]
             self.update_ui("Kaptia installed; editor integration needs attention",
-                           f"Extension package: {vsix_path}. Install it manually from VS Code > Extensions > … > Install from VSIX. {detail}",
+                           f"Extension package: {vsix_path}. Use Cursor/VS Code Extensions > Install from VSIX. " + " | ".join(failures),
                            "EDITOR", 100, False)
 
     def install(self):
