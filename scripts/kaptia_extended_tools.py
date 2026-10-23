@@ -80,7 +80,7 @@ def _lexical_tokens(text):
     """Tokenize Latin terms and Chinese character n-grams without external dependencies."""
     text = text.casefold()
     tokens = re.findall(r"[a-z0-9_]+", text)
-    cjk = "".join(re.findall(r"[\\u3400-\\u4dbf\\u4e00-\\u9fff\\uf900-\\ufaff]", text))
+    cjk = "".join(re.findall(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]", text))
     tokens.extend(cjk[i:i + 2] for i in range(max(0, len(cjk) - 1)))
     tokens.extend(cjk[i:i + 3] for i in range(max(0, len(cjk) - 2)))
     return tokens
@@ -103,7 +103,11 @@ def _hybrid_rank(query, docs, vector_scores, top_k):
         i: 1.0 / (60 + vector_rank[i]) + 1.0 / (60 + lexical_rank[i])
         for i in range(len(docs))
     }
-    ordered = sorted(fused, key=lambda i: fused[i], reverse=True)[:top_k]
+    ordered = sorted(
+        fused,
+        key=lambda i: (fused[i], lexical_scores[i], float(vector_scores[i])),
+        reverse=True,
+    )[:top_k]
     return [(i, fused[i], lexical_scores[i]) for i in ordered]
 
 
@@ -157,7 +161,16 @@ def detect_review_scope(query):
                 "specificity": max(map(len, found)),
             })
     # Keep the narrowest matched domain first; do not silently discard broader matches.
-    matches.sort(key=lambda item: (-item["specificity"], item["id"]))
+    def scope_depth(scope_id):
+        depth = 0
+        parent = _REVIEW_DOMAINS[scope_id]["parent"]
+        seen = set()
+        while parent in _REVIEW_DOMAINS and parent not in seen:
+            seen.add(parent)
+            depth += 1
+            parent = _REVIEW_DOMAINS[parent]["parent"]
+        return depth
+    matches.sort(key=lambda item: (-scope_depth(item["id"]), -item["specificity"], item["id"]))
     primary = matches[0] if matches else None
     return _result("detect_review_scope", True, query=query,
                    scope=primary["id"] if primary else None,
