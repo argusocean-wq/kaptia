@@ -154,8 +154,31 @@ def _write_section(generate, user_text, plan, title, previous_summary="", tool_c
     # Keep execution mode transparent in workflow events without exposing hidden reasoning.
     return answer.strip()
 
+def _validate_review_payload(data, needs_research=False):
+    """Validate reviewer output strictly; malformed types must never pass."""
+    if not isinstance(data, dict):
+        raise ValueError("審核結果必須是 JSON object")
+    passed = data.get("pass")
+    issues = data.get("issues")
+    source_check = data.get("needs_source_check", False)
+    if not isinstance(passed, bool):
+        raise ValueError("pass 必須是布林值")
+    if not isinstance(issues, list) or any(not isinstance(item, str) for item in issues):
+        raise ValueError("issues 必須是字串清單")
+    if not isinstance(source_check, bool):
+        raise ValueError("needs_source_check 必須是布林值")
+    if needs_research:
+        source_check = True
+    return {
+        "pass": passed,
+        "issues": issues[:8],
+        "needs_source_check": source_check,
+        "review_available": True,
+    }
+
+
 def verify_output(generate, user_text, plan, content):
-    """Model-based quality gate; reports its limits and never claims external verification."""
+    """Model-based quality gate; malformed review output fails closed."""
     prompt = f"""原始需求：
 {user_text}
 規劃：{json.dumps(plan, ensure_ascii=False)}
@@ -169,19 +192,11 @@ def verify_output(generate, user_text, plan, content):
              {"role": "user", "content": prompt}],
             max_new_tokens=350, temperature=0.1,
         ))
-        issues = data.get("issues", [])
-        if not isinstance(issues, list):
-            issues = []
-        return {
-            "pass": bool(data.get("pass", False)),
-            "issues": [str(x) for x in issues[:8]],
-            "needs_source_check": bool(data.get("needs_source_check", False)),
-            "review_available": True,
-        }
+        return _validate_review_payload(data, bool(plan.get("needs_research")))
     except Exception as exc:
         return {
-            "pass": False, "issues": [f"審核器輸出無法解析：{type(exc).__name__}"],
-            "needs_source_check": bool(plan["needs_research"]),
+            "pass": False, "issues": [f"審核器輸出無法解析或欄位無效：{type(exc).__name__}"],
+            "needs_source_check": bool(plan.get("needs_research", False)),
             "review_available": False,
         }
 
