@@ -52,6 +52,56 @@ def load_language_engine():
     return tokenizer, model
 
 
+def normalize_prompt(text: str) -> str:
+    return re.sub(r"\s+|[，。！？、,.!?；;：:（）()「」『』]", "", text).casefold()
+
+
+def lookup_seed_response(user_text: str) -> str | None:
+    """Clearly labeled lookup fallback from Kaptia's own tiny bootstrap examples."""
+    path = ROOT / "training" / "bootstrap_dialogue_seed.jsonl"
+    if not path.is_file():
+        return None
+    query = normalize_prompt(user_text)
+    if not query:
+        return None
+    best_ratio = 0.0
+    best_response = None
+    with path.open("r", encoding="utf-8") as stream:
+        for line in stream:
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            sample = item.get("text") if isinstance(item, dict) else None
+            if not isinstance(sample, str):
+                continue
+            if "<|user|>" not in sample or "<|assistant|>" not in sample or "<|end|>" not in sample:
+                continue
+            remainder = sample.split("<|user|>", 1)[1]
+            user_part, separator, assistant_part = remainder.partition("<|assistant|>")
+            if not separator:
+                continue
+            response = assistant_part.split("<|end|>", 1)[0].strip()
+            candidate = normalize_prompt(user_part)
+            if candidate == query:
+                return response
+            ratio = SequenceMatcher(None, query, candidate).ratio()
+            if ratio > best_ratio:
+                best_ratio = ratio
+                best_response = response
+    return best_response if best_ratio >= 0.82 else None
+
+
+def acceptable_generated_text(text: str) -> bool:
+    if not text or "\ufffd" in text or len(text) < 8:
+        return False
+    if sum(ch.isprintable() for ch in text) / max(1, len(text)) < 0.98:
+        return False
+    if len(text) > 12 and len(set(text)) <= 3:
+        return False
+    return True
+
+
 def build_generator(tokenizer, model):
     device = next(model.parameters()).device
     end_ids = tokenizer.encode("<|end|>")
@@ -134,11 +184,21 @@ def main() -> int:
             continue
         history.append({"role": "user", "content": user_text})
         try:
-            answer = generate(history, max_new_tokens=256, temperature=0.45)
-            if not answer:
-                print("\nKaptia：目前沒有產生可顯示的文字。需要更多訓練資料與訓練步數。")
+            answer = generate(history, max_new_tokens=256, temperature=0.35)
+            seed_answer = lookup_seed_response(user_text)
+            if seed_answer is not None and (
+                not acceptable_generated_text(answer)
+                or SequenceMatcher(None, normalize_prompt(answer), normalize_prompt(seed_answer)).ratio() < 0.45
+            ):
+                answer = seed_answer
+                print("\nKaptia（示範語料檢索；不是神經生成）：\n" + answer)
+            elif acceptable_generated_text(answer) and os.environ.get("KAPTIA_SHOW_EXPERIMENTAL_GENERATION") == "1":
+                print("\nKaptia（實驗性模型生成）：\n" + answer)
+            elif seed_answer is not None:
+                print("\nKaptia（模型生成）：\n" + answer)
             else:
-                print("\nKaptia：\n" + answer)
+                answer = "我目前仍在從零訓練階段，現有起步語料不足以讓我可靠回答這個問題。"
+                print("\nKaptia（訓練狀態）：\n" + answer)
             history.append({"role": "assistant", "content": answer})
             history = history[-6:]
         except Exception as exc:
