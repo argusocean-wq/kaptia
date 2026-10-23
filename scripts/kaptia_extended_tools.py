@@ -441,7 +441,9 @@ def dispatch_tool(name, arguments):
         "calculate": calculate,
         "web_search": web_search,
         "ingest_user_documents": ingest_user_documents,
-        "search_user_documents": search_user_documents,\n        "detect_review_scope": detect_review_scope,\n        "retrieve_scoped_knowledge": retrieve_scoped_knowledge,
+        "search_user_documents": search_user_documents,
+        "detect_review_scope": detect_review_scope,
+        "retrieve_scoped_knowledge": retrieve_scoped_knowledge,
     }
     try:
         if name not in registry:
