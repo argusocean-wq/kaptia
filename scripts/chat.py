@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # Kaptia uses a replaceable local language backend; this default is not Kaptia-owned weights.
 DEFAULT_MODEL = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
 MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", DEFAULT_MODEL)
-ADAPTER_DIR = ROOT / "outputs" / "kaptia-language-qlora" / "adapter"
+ADAPTER_DIR = ROOT / "outputs" / "kaptia-smollm2-qlora" / "adapter"
 
 
 def load_language_engine():
@@ -35,6 +35,15 @@ def load_language_engine():
 
     if ADAPTER_DIR.is_dir():
         try:
+            import json
+            config_path = ADAPTER_DIR / "adapter_config.json"
+            if not config_path.is_file():
+                raise RuntimeError("adapter_config.json 不存在；拒絕載入不完整的微調資料。")
+            with config_path.open("r", encoding="utf-8") as handle:
+                adapter_config = json.load(handle)
+            adapter_base = str(adapter_config.get("base_model_name_or_path", "")).casefold()
+            if adapter_base and adapter_base != MODEL_ID.casefold():
+                raise RuntimeError(f"微調 adapter 基礎模型不相容：{adapter_base}；目前模型：{MODEL_ID}。請重新訓練。")
             from peft import PeftModel
             model = PeftModel.from_pretrained(model, str(ADAPTER_DIR), local_files_only=True)
         except Exception as exc:
