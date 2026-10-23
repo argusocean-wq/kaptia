@@ -86,8 +86,8 @@ Kaptia 是完整模型系統的產品名稱。程式預設已移除 Qwen，改�
 2. 通用訓練資料放在 `training/seed_dataset.jsonl`，多語言程式碼訓練資料放在 `training/code_seed_dataset.jsonl`。資料需具備使用權、經品質審核且去除個資；目前程式碼樣本仍標記為待人工審查。
 3. 先執行 `python scripts\\validate_training_data.py` 與 `python scripts\\validate_code_dataset.py`，檢查資料格式。程式碼驗收集 `training/code_eval_dataset.jsonl` 不會自動加入訓練集。
 4. 在虛擬環境中執行 `python scripts\\train_qlora.py`。流程會使用 assistant 回答 token 作為訓練目標，並在每個 epoch 評估保留集。
-5. 訓練 adapter 預設寫入 `outputs/kaptia-language-qlora/adapter`，指標寫入 `outputs/kaptia-language-qlora/metrics.json`。聊天程式會在此 adapter 存在時嘗試載入。
-6. 執行 `python scripts\\evaluate_adapter.py`，在獨立驗收題上分別執行基礎模型與 adapter；檢查 `outputs/kaptia-language-qlora/comparison.jsonl` 並人工評分。示範資料量少，不足以證明能力提升。
+5. 重新訓練 adapter 預設寫入全新的 `outputs/kaptia-smollm2-qlora/adapter`，指標寫入 `outputs/kaptia-smollm2-qlora/metrics.json`，不會覆蓋舊 Qwen adapter。聊天程式只會載入基礎模型相符的 adapter；不相容時明確停止。
+6. 執行 `python scripts\\evaluate_adapter.py`，在獨立驗收題上分別執行 SmolLM2 基礎模型與新 adapter；檢查 `outputs/kaptia-smollm2-qlora/comparison.jsonl` 並人工評分。示範資料量少，不足以證明能力提升。
 
 雙端設計、iPhone Safari 的模型相容性與未完成項目請見 [`docs/KAPTIA_MODEL_PLAN.md`](docs/KAPTIA_MODEL_PLAN.md)。Windows 訓練成功不代表 PEFT adapter 可直接在 Safari 執行；手機端需另外驗證 ONNX/瀏覽器模型與本機知識檢索。
 
