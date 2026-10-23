@@ -18,6 +18,7 @@
 - `training/code_languages.json`: 語言分類、任務類型及品質門檻。
 - `scripts/validate_code_dataset.py`: 驗收資料結構檢查。\n- `scripts/build_knowledge_index.py`: 從明確允許的 Markdown 來源建立帶有來源路徑、章節、SHA-256 的本機知識包。\n- `scripts/query_knowledge.py`: 不依賴外部套件的離線詞彙檢索基線；分數只代表詞彙匹配，不代表事實正確率。\n- `scripts/test_knowledge_index.py`: 知識檢索的基本測試。
 - `scripts/train_qlora.py`: 只計算 assistant 回覆 token 的訓練流程，並在每個 epoch 評估。
+- `scripts/export_kaptia_model.py`: 將已訓練的 PEFT adapter 合併成獨立 Hugging Face 權重；不等於 ONNX 匯出，也不代表 Safari 已相容。
 - 訓練輸出位於 `outputs/kaptia-language-qlora/`，不應將模型權重或個人資料提交至 Git。
 
 ## Windows 執行順序
@@ -37,3 +38,12 @@
 - 人工盲評 base 與 adapter 的同一組題目；不以 training loss 下降單獨判定品質提升。
 - iPhone 端另行驗證模型下載、離線快取、Safari 記憶體、回覆品質與本機知識檢索。這些不能由 Windows 訓練成功代替。
 - 轉換到 ONNX/瀏覽器格式是獨立工作，只有在成功轉換並於實機端到端測試後才可標記完成。
+
+## 匯出獨立 Kaptia 權重（訓練完成後）
+
+1. 先完成訓練並確認 `outputs/kaptia-language-qlora/adapter/adapter_config.json` 存在。
+2. 執行 `python scripts/export_kaptia_model.py`。此步驟會載入完整基礎模型，可能需要大量 RAM、VRAM 與磁碟空間；若記憶體不足會失敗，不應將失敗視為完成。
+3. 預設輸出到 `outputs/kaptia-standalone/`。若輸出目錄已存在且非空，腳本會停止以避免覆寫。
+4. 檢查 `kaptia_model_manifest.json`、權重檔與 tokenizer。基礎模型及 adapter 的授權條款必須在散布前另外確認。
+5. 這個輸出是 Transformers 格式的獨立權重，不是 ONNX；不得直接將它當成可在 iPhone Safari 載入的檔案。ONNX 轉換、量化、下載校驗與真機測試仍是獨立工作。
+6. 執行 `python scripts/evaluate_adapter.py` 並人工盲評保留驗收集；合併成功只證明匯出步驟完成，不代表 Kaptia 品質已改善。
