@@ -5,6 +5,9 @@ on:
     branches: ["main"]
     paths:
       - "installer/**"
+      - "scripts/**"
+      - "training/bootstrap_dialogue_seed.jsonl"
+      - "requirements.txt"
       - ".github/workflows/build-windows-installer.yml"
   workflow_dispatch:
 
@@ -31,22 +34,16 @@ jobs:
         run: python -m pip install --upgrade pyinstaller
       - name: Build Windows executable
         run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name Kaptia-Setup installer/windows_installer.py
-      - name: Move rolling installer tag to this source revision
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -f kaptia-latest "$GITHUB_SHA"
-          git push origin refs/tags/kaptia-latest --force
-      - name: Publish or update rolling GitHub Release
+      - name: Publish versioned GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: kaptia-latest
-          name: Kaptia Latest Windows Installer
+          tag_name: kaptia-build-${{ github.run_number }}
+          name: Kaptia Windows Installer ${{ github.run_number }}
           body: |
             Rolling Windows installer built from the latest main-branch installer source.
             The installer downloads the current Kaptia source and prepares the local Python runtime.
-            First launch requires network access and downloads the configured language model.
+            It trains a small Kaptia scratch checkpoint from random initialization using the bundled seed corpus.
+            This bootstrap checkpoint is not a general-capability language model.
           target_commitish: ${{ github.sha }}
           files: dist/Kaptia-Setup.exe
           overwrite_files: true
