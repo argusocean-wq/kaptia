@@ -60,6 +60,18 @@ class Installer(tk.Tk):
                     out.write(chunk)
             self.set_status("正在解壓縮程式檔案…")
             with zipfile.ZipFile(ZIP_PATH) as archive:
+                # Reject ZIP path traversal before writing any member to disk.
+                root_resolved = ROOT.resolve()
+                for member in archive.infolist():
+                    target = (ROOT / member.filename).resolve()
+                    if target != root_resolved and root_resolved not in target.parents:
+                        raise RuntimeError(f"下載的壓縮檔包含不安全路徑：{member.filename}")
+                    if member.is_dir():
+                        continue
+                    # Reject symbolic-link entries; installer only expects ordinary files.
+                    mode = (member.external_attr >> 16) & 0o170000
+                    if mode == 0o120000:
+                        raise RuntimeError(f"下載的壓縮檔包含不支援的符號連結：{member.filename}")
                 archive.extractall(ROOT)
             source_dirs = [p for p in ROOT.iterdir() if p.is_dir() and p.name.startswith("kaptia-")]
             if not source_dirs:
@@ -74,7 +86,9 @@ class Installer(tk.Tk):
 
             self.set_status("正在檢查 Python 3.10/3.11…")
             python_cmd = None
-            for candidate in (["py", "-3.11"], ["py", "-3.10"], [sys.executable]):
+            # Do not use sys.executable as a fallback: inside a PyInstaller build
+            # it points to this installer EXE, not to a Python interpreter.
+            for candidate in (["py", "-3.11"], ["py", "-3.10"], ["python"], ["python3"]):
                 try:
                     result = subprocess.run(candidate + ["--version"], capture_output=True,
                                             text=True, timeout=15)
