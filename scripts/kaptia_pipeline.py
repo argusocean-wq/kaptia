@@ -253,6 +253,31 @@ def run_workflow(generate, user_text):
         sections, summary = [], ""
         for title in plan["outline"]:
             section = _write_section(generate, user_text, plan, title, summary, tool_context=tool_context)
+            # Debug each section immediately; repair at most once before proceeding.
+            section_review = verify_output(generate, f"{user_text}\n本次段落：{title}", plan, section)
+            if section_review.get("review_available") and not section_review.get("pass") and section_review.get("issues"):
+                repair_prompt = (
+                    "請只修正本段列出的具體問題，不要擴寫其他段落。\n"
+                    f"原始需求：{user_text}\n段落：{title}\n"
+                    f"問題：{json.dumps(section_review['issues'], ensure_ascii=False)}\n"
+                    f"原段落：\n{section}\n輸出修正版段落。"
+                )
+                try:
+                    repaired = generate(
+                        [{"role": "system", "content": WRITER_RULES},
+                         {"role": "user", "content": repair_prompt}],
+                        max_new_tokens=1100, temperature=0.2,
+                    ).strip()
+                    if repaired:
+                        section = repaired
+                        section_review = verify_output(generate, f"{user_text}\n本次段落：{title}", plan, section)
+                        events.append(f"段落 Debug：{title}，已嘗試修正一次")
+                except Exception as exc:
+                    events.append(f"段落 Debug：{title}，自動修正失敗（{type(exc).__name__}）")
+            if not section_review.get("pass"):
+                events.append(f"段落 Debug：{title}，仍需人工檢查")
+            else:
+                events.append(f"段落 Debug：{title}，模型審核通過（非獨立驗證）")
             sections.append(f"## {title}\n\n{section}")
             summary = "\n".join(sections)[-1800:]
             events.append(f"完成段落：{title}")
