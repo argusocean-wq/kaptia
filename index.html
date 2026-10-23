@@ -26,7 +26,7 @@ section{padding:48px 0;border-top:1px solid #242424}.eyebrow{font-size:11px;lett
 <div class="orb" aria-hidden="true"></div>
 <div class="eyebrow">YOUR COMPUTER. YOUR WORKSPACE.</div>
 <h1>AI 在本機執行。</h1>
-<p class="lead">Kaptia 是面向 Windows 的本機文字 AI 助理。從這個網站了解產品並下載啟動器；模型下載完成後，對話由你的電腦執行，而不是在這個網頁裡聊天。</p>
+<p class="lead">Kaptia 是面向 Windows 的本機文字 AI 助理。從這個網站了解產品並下載啟動器；本機起步模型訓練完成後，對話由你的電腦執行，而不是在這個網頁裡聊天。</p>
 <div class="actions">
 <a class="btn" href="https://github.com/argusocean-wq/kaptia/releases/latest/download/Kaptia-Setup.exe" id="download">下載 Windows 版 (.exe) ↓</a>
 <a class="btn secondary" href="https://github.com/argusocean-wq/kaptia" target="_blank" rel="noopener">查看 GitHub 專案 ↗</a>
@@ -37,7 +37,7 @@ section{padding:48px 0;border-top:1px solid #242424}.eyebrow{font-size:11px;lett
 <div class="eyebrow">OVERVIEW</div><h2>網站只負責介紹與下載</h2>
 <div class="grid">
 <article class="card"><div class="num">01 / WEBSITE</div><h3>產品介紹</h3><p>瀏覽器只顯示功能、需求與安裝說明，不在 Edge 網頁內載入大型模型或提供聊天工作台。</p></article>
-<article class="card"><div class="num">02 / INSTALLER</div><h3>下載桌面啟動器</h3><p>按下載取得 Windows 執行檔。啟動器負責準備本機執行環境、取得模型檔案並顯示安裝狀態。</p></article>
+<article class="card"><div class="num">02 / INSTALLER</div><h3>下載桌面啟動器</h3><p>按下載取得 Windows 執行檔。啟動器負責準備本機執行環境、訓練 Kaptia 起步模型，並在偵測到 VS Code 時安裝編輯器整合。</p></article>
 <article class="card"><div class="num">03 / LOCAL</div><h3>在電腦上執行</h3><p>模型完成下載後，從本機啟動 Kaptia。推論使用電腦的 CPU 或相容 GPU；效能依硬體而異。</p></article>
 </div>
 </section>
@@ -53,7 +53,7 @@ section{padding:48px 0;border-top:1px solid #242424}.eyebrow{font-size:11px;lett
 <div class="eyebrow">SYSTEM REQUIREMENTS</div><h2>開始前請確認</h2>
 <div class="requirements">
 <div class="req"><strong>作業系統</strong><p class="copy">Windows 10 或 Windows 11（64 位元）。目前此安裝流程不是 iPhone/iPad 安裝程式。</p></div>
-<div class="req"><strong>網路與儲存空間</strong><p class="copy">首次設定需下載 Python 套件與大型語言模型。請預留數 GB 以上空間；實際需求依模型版本而定。</p></div>
+<div class="req"><strong>網路與儲存空間</strong><p class="copy">首次設定需下載 Python 套件並執行起步訓練。請預留足夠磁碟空間；訓練速度取決於 CPU/GPU。</p></div>
 <div class="req"><strong>硬體</strong><p class="copy">可使用 CPU 執行但可能較慢；相容的 NVIDIA GPU 可改善部分工作負載的速度與記憶體配置。</p></div>
 <div class="req"><strong>隱私與限制</strong><p class="copy">本機推論不等於所有安裝步驟都離線。下載來源、模型授權、遙測與外部連線狀態應以實際發布版本說明為準。</p></div>
 </div>
