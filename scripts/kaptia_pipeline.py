@@ -189,19 +189,27 @@ def _run_preflight_tools(generate, user_text):
             from scripts.kaptia_agent_loop import run_tool_loop
         except ImportError:
             run_tool_loop = None
-    if run_tool_loop is not None:
+    lower = user_text.casefold()
+    # Avoid an extra model round-trip on ordinary chat: invoke the agent planner
+    # only when the user explicitly asks for tool orchestration / dependency checks.
+    tool_intent_terms = (
+        "使用工具", "呼叫工具", "工具協作", "工具溝通", "檢查依賴", "檢查相依",
+        "自動選工具", "工具流程", "tool orchestration", "use tools", "dependency check",
+    )
+    explicit_tool_intent = any(term in lower for term in tool_intent_terms)
+    check_requested = any(term in lower for term in (
+        "跑測試", "執行測試", "執行檢查", "驗證程式", "run tests", "run checks"
+    ))
+    if run_tool_loop is not None and (explicit_tool_intent or check_requested):
         try:
             agent_result = run_tool_loop(generate, user_text, dispatch_tool, max_steps=4)
             events.extend(agent_result["events"])
             if agent_result["context"]:
                 snippets.append(agent_result["context"])
-            lower = user_text.casefold()
-            check_requested = any(term in lower for term in ("跑測試", "執行測試", "執行檢查", "驗證程式", "run tests", "run checks"))
             if agent_result["results"] and not check_requested:
                 return events, "\\n".join(snippets)
         except Exception as exc:
             events.append(f"模型工具迴圈未能執行：{type(exc).__name__}: {exc}")
-    lower = user_text.casefold()
     project_terms = ("kaptia", "這個專案", "專案目前", "專案上下文", "專案記憶",
                      "訓練流程", "知識庫", "倉庫", "repository", "repo")
     if any(term in lower for term in project_terms):
