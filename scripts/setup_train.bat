@@ -36,7 +36,7 @@ if defined LOCALAPPDATA if exist "%LOCALAPPDATA%\Kaptia\model-data\kaptia-scratc
 )
 set "RESUME_ARGS="
 if exist "%OUTPUT_DIR%\latest_checkpoint.pt" (
-  set "RESUME_ARGS=--resume %OUTPUT_DIR%\latest_checkpoint.pt"
+  set RESUME_ARGS=--resume "%OUTPUT_DIR%\latest_checkpoint.pt"
   echo Continuing from the existing Kaptia scratch checkpoint.
 ) else (
   echo No checkpoint found. Starting from random initialization for 10000 steps.
