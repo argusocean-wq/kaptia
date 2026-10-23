@@ -236,7 +236,7 @@ def calculate(expression):
                 value = _ALLOWED_UNARY[type(node.op)](visit(node.operand, depth + 1))
             else:
                 raise ValueError("只允許數字、括號及 + - * / // % **")
-            if not math.isfinite(float(value)) or abs(value) > 1e100:
+            if not math.isfinite(float(value)) or abs(value) >= 1e100:
                 raise ValueError("結果超出數值範圍")
             return value
         value = visit(tree)
