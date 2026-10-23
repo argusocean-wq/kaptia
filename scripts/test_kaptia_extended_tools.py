@@ -143,5 +143,37 @@ class HybridRetrievalTests(unittest.TestCase):
         self.assertEqual(len(ranked), 3)
 
 
+class ReviewScopeRoutingTests(unittest.TestCase):
+    def test_specific_virology_scope_is_detected_ahead_of_biology(self):
+        result = tools.detect_review_scope("請以生物學角度審查這份病毒學研究")
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["scope"], "virology")
+        self.assertIn("biology", [item["id"] for item in result["matches"]])
+        self.assertIn("病毒學", result["scope_label"])
+
+    def test_english_domain_alias_is_supported(self):
+        result = tools.detect_review_scope("Review this paper from a virology perspective")
+        self.assertEqual(result["scope"], "virology")
+
+    def test_unmatched_query_does_not_force_a_domain(self):
+        result = tools.detect_review_scope("幫我整理這段內容")
+        self.assertIsNone(result["scope"])
+        self.assertTrue(result["needs_clarification"])
+
+    def test_scoped_retrieval_expands_query_and_preserves_evidence(self):
+        fake = {
+            "ok": True,
+            "results": [{"source": "virus.md", "chunk": 2, "text": "病毒複製相關筆記"}],
+            "retrieval": "reciprocal_rank_fusion(vector+lexical)",
+        }
+        with patch.object(tools, "search_user_documents", return_value=fake) as search:
+            result = tools.retrieve_scoped_knowledge("審查病毒學研究")
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["scope"], "virology")
+        self.assertEqual(result["evidence"][0]["source"], "virus.md")
+        self.assertIn("病毒學", search.call_args.args[0])
+        self.assertTrue(result["synthesis_plan"])
+
+
 if __name__ == "__main__":
     unittest.main()
