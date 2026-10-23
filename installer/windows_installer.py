@@ -16,13 +16,13 @@ SOURCE_ZIP = f"https://github.com/{OWNER_REPO}/archive/refs/heads/main.zip"
 ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "Kaptia"
 ZIP_PATH = ROOT / "kaptia-source.zip"
 
-BG = "#090B10"
-PANEL = "#11151D"
-PANEL_2 = "#171D28"
-TEXT = "#F4F7FB"
-MUTED = "#929CAD"
-ACCENT = "#B8F36B"
-BORDER = "#252D3A"
+BG = "#080808"
+PANEL = "#151515"
+PANEL_2 = "#242424"
+TEXT = "#FFFFFF"
+MUTED = "#B8B8B8"
+ACCENT = "#FFFFFF"
+BORDER = "#3A3A3A"
 
 
 class Installer(tk.Tk):
@@ -42,8 +42,8 @@ class Installer(tk.Tk):
         style = ttk.Style(self)
         style.theme_use("clam")
         style.configure("Kaptia.Horizontal.TProgressbar",
-                        troughcolor=PANEL_2, background=ACCENT,
-                        bordercolor=PANEL_2, lightcolor=ACCENT, darkcolor=ACCENT,
+                        troughcolor=PANEL_2, background="#FFFFFF",
+                        bordercolor=PANEL_2, lightcolor="#FFFFFF", darkcolor="#D8D8D8",
                         thickness=8)
 
         shell = tk.Frame(self, bg=BG)
@@ -51,10 +51,10 @@ class Installer(tk.Tk):
 
         top = tk.Frame(shell, bg=BG)
         top.pack(fill="x")
-        mark = tk.Frame(top, bg=ACCENT, width=42, height=42)
+        mark = tk.Frame(top, bg="#FFFFFF", width=42, height=42)
         mark.pack(side="left")
         mark.pack_propagate(False)
-        tk.Label(mark, text="K", bg=ACCENT, fg=BG,
+        tk.Label(mark, text="K", bg="#FFFFFF", fg="#080808",
                  font=("Segoe UI", 22, "bold")).pack(expand=True)
         brand = tk.Frame(top, bg=BG)
         brand.pack(side="left", padx=13)
@@ -62,7 +62,7 @@ class Installer(tk.Tk):
                  font=("Segoe UI", 15, "bold")).pack(anchor="w")
         tk.Label(brand, text="LOCAL AI WORKSPACE  /  WINDOWS SETUP",
                  bg=BG, fg=MUTED, font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(3, 0))
-        tk.Label(top, text="SETUP  •  01", bg=BG, fg=ACCENT,
+        tk.Label(top, text="SETUP  •  01", bg=BG, fg="#FFFFFF",
                  font=("Segoe UI", 9, "bold")).pack(side="right", pady=10)
 
         tk.Frame(shell, bg=BORDER, height=1).pack(fill="x", pady=(22, 22))
@@ -99,11 +99,23 @@ class Installer(tk.Tk):
         tk.Label(footer, text="GitHub  /  argusocean-wq/kaptia",
                  bg=BG, fg="#657083", font=("Segoe UI", 8)).pack(side="left")
         self.button = tk.Button(footer, text="Download Kaptia  →", command=self.start,
-                                bg=ACCENT, fg=BG, activebackground="#D0FF91",
-                                activeforeground=BG, relief="flat", bd=0,
+                                bg="#FFFFFF", fg="#080808", activebackground="#DADADA",
+                                activeforeground="#080808", relief="flat", bd=0,
                                 padx=22, pady=13, cursor="hand2",
                                 font=("Segoe UI", 10, "bold"))
         self.button.pack(side="right")
+        self._gradient_bar(shell, 4)
+
+    def _gradient_bar(self, parent, height=4):
+        # Tkinter has no native gradient widget; draw a monochrome horizontal gradient.
+        canvas = tk.Canvas(parent, height=height, bg=BG, highlightthickness=0, bd=0)
+        canvas.pack(fill="x", side="bottom", pady=(18, 0))
+        width = 640
+        for x in range(width):
+            t = x / max(1, width - 1)
+            shade = int(35 + 220 * (1 - abs(2 * t - 1)))
+            color = f"#{shade:02x}{shade:02x}{shade:02x}"
+            canvas.create_line(x, 0, x, height, fill=color)
 
     def update_ui(self, status=None, detail=None, phase=None, percent=None, indeterminate=False):
         def apply():
