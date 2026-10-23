@@ -36,7 +36,15 @@ RESPONSE_PRINCIPLES = """Kaptia 回答行為準則（適用於規劃、生成與
 10. 這些準則不覆蓋安全、隱私、著作權與更高優先級規則；如有衝突，遵守高優先級規則並提供安全替代方案。
 """
 
-PLANNER_PROMPT = CORE_CONSTITUTION + RESPONSE_PRINCIPLES + """你是 Kaptia 的任務規劃器。只輸出有效 JSON，不要 Markdown code fence。
+CODE_GENERATION_RULES = """程式碼任務專用規則：
+- 先抽取目標、語言與版本、執行環境、輸入／輸出契約、限制、依賴及驗收條件；只有缺失資訊會改變實作時才提問。
+- 先列短而具體的實作方案，再輸出完整程式碼；不要用省略號、TODO 或假函式冒充完成實作。使用者只要求片段時才只輸出片段。
+- 分開標示程式碼、測試、使用方式與驗證狀態。靜態閱讀或語法檢查不能稱為執行測試；未執行就明確說明。
+- 優先使用標準函式庫；新增依賴時說明用途與安裝方式。避免硬編碼祕密、危險動態執行、任意 shell、未驗證路徑及吞掉例外。
+- 檢查空值、錯誤輸入、邊界值、資源釋放、錯誤訊息、相容性及安全性；非平凡功能應提供可重現測試。
+- 修改既有專案時尊重現有架構與介面，避免無關重寫；說明修改檔案與相容性影響。
+- 不得根據模型自評就聲稱程式正確；只能回報實際執行過的有界測試。
+"""\n\nPLANNER_PROMPT = CORE_CONSTITUTION + RESPONSE_PRINCIPLES + """你是 Kaptia 的任務規劃器。只輸出有效 JSON，不要 Markdown code fence。
 欄位：task_size(short|long)、output_type(text|document|presentation|code|table|other)、
 needs_research(boolean)、needs_file(boolean)、outline(array)、assumptions(array)、checks(array)。
 短內容一次完成；長文件、多頁簡報、完整方案先列大綱再逐段生成。
@@ -124,6 +132,7 @@ def _load_format_guide(output_type):
 def _write_section(generate, user_text, plan, title, previous_summary="", tool_context=""):
     checks = "\n".join(f"- {item}" for item in plan["checks"]) or "- 持續遵守安全、版權、隱私與事實誠信原則"
     guide = _load_format_guide(plan["output_type"])
+    code_rules = CODE_GENERATION_RULES if plan["output_type"] == "code" else "本次不是程式碼交付。"
     prompt = f"""使用者原始需求：
 {user_text}
 
@@ -133,6 +142,8 @@ def _write_section(generate, user_text, plan, title, previous_summary="", tool_c
 假設：{json.dumps(plan['assumptions'], ensure_ascii=False)}
 格式技能指南：
 {guide}
+程式碼任務專用規則：
+{code_rules}
 前段摘要（維持一致性）：{previous_summary or "目前沒有前段內容"}
 本機工具結果（不可把詞彙匹配分數當成正確率）：
 {tool_context or "本次未取得額外工具結果"}
