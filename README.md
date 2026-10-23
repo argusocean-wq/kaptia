@@ -16,6 +16,23 @@ Kaptia 是以繁體中文為預設的本機文字 AI 助理。執行時不依賴
 8. **驗證結果**：以同一語言模型檢查是否回答原始問題、格式、矛盾、假設與來源誠信；若發現實質問題，會嘗試修正一次。這是模型自我審核，不能取代獨立事實查核。
 9. **簡短收尾**：顯示流程紀錄、自我審核狀態、待查證問題與檔案位置。
 
+
+## 可選推論時推理（OptiLLM-inspired）
+
+Kaptia 加入了原創的輕量候選比較策略，參考「推論時增加有限計算」的設計方向，並非直接移植 OptiLLM，也不代表其 20 多種方法已全部整合。
+
+- 預設維持原狀：`KAPTIA_REASONING_MODE=single`
+- 可選模式：設定 `KAPTIA_REASONING_MODE=best_of_n`，並以 `KAPTIA_REASONING_CANDIDATES=2` 或 `3` 限制候選數。
+- Windows CMD 範例（只對目前終端機工作階段生效）：
+  ```bat
+  set KAPTIA_REASONING_MODE=best_of_n
+  set KAPTIA_REASONING_CANDIDATES=3
+  python scripts\\chat.py
+  ```
+- 會額外生成最多三個候選答案，再由同一個模型挑選；這不是獨立驗證，可能增加延遲、耗電與運算量，也不保證準確率提升。
+- 目前僅接入 Python 推論流程，不會自動影響網頁端 Transformers.js/ONNX 或 iPhone Safari。
+- 測試：`python -m unittest discover -s scripts -p "test_*.py"`。
+
 ## 核心憲法與安全邊界
 
 - `docs/KAPTIA_CONSTITUTION.md`：定義不得故意傷害人類、尊重著作權與授權、保護隱私、不得捏造驗證結果等高優先級原則。
@@ -27,6 +44,7 @@ Kaptia 是以繁體中文為預設的本機文字 AI 助理。執行時不依賴
 - `scripts/open_kaptia.bat`：Windows 啟動器
 - `scripts/chat.py`：本機文字對話入口與流程紀錄
 - `scripts/kaptia_pipeline.py`：規劃、分段生成、工具結果注入、審核與本機檔案交付
+- `scripts/kaptia_reasoning.py`：可選的有限候選生成與模型選擇；預設維持單次生成
 - `scripts/kaptia_tools.py`：允許清單式工具路由（本機知識檢索、受限檔案讀取、固定檢查命令；不提供任意 shell）
 - `scripts/kaptia_memory.py`：明確寫入的專案決策／任務／備註／阻礙記憶，不自動保存對話全文
 - `scripts/kaptia_artifacts.py`：Markdown、TXT、JSON、CSV、DOCX、PPTX 及受限 PDF 匯出與讀回驗證
