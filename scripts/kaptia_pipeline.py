@@ -97,7 +97,7 @@ def _load_format_guide(output_type):
     end = guide.find("\n## ", start + len(marker))
     return guide[start:end if end >= 0 else None][:3500]
 
-def _write_section(generate, user_text, plan, title, previous_summary=""):
+def _write_section(generate, user_text, plan, title, previous_summary="", tool_context=""):
     checks = "\n".join(f"- {item}" for item in plan["checks"]) or "- 持續遵守安全、版權、隱私與事實誠信原則"
     guide = _load_format_guide(plan["output_type"])
     prompt = f"""使用者原始需求：
@@ -152,20 +152,60 @@ def verify_output(generate, user_text, plan, content):
             "review_available": False,
         }
 
+def _run_preflight_tools(user_text):
+    """Deterministic local tool routing; only named, allowlisted tools can execute."""
+    try:
+        from kaptia_tools import dispatch_tool
+    except ImportError:
+        try:
+            from scripts.kaptia_tools import dispatch_tool
+        except ImportError:
+            return [], ""
+    events, snippets = [], []
+    lower = user_text.casefold()
+    project_terms = ("kaptia", "這個專案", "專案目前", "專案上下文", "專案記憶",
+                     "訓練流程", "知識庫", "倉庫", "repository", "repo")
+    if any(term in lower for term in project_terms):
+        result = dispatch_tool("search_project_knowledge", {"query": user_text[:2000], "top_k": 3})
+        events.append("本機專案知識檢索：" + ("成功" if result.get("ok") else "未取得結果"))
+        snippets.append(json.dumps(result, ensure_ascii=False)[:7000])
+    check_requested = any(term in lower for term in ("跑測試", "執行測試", "執行檢查", "驗證程式", "run tests", "run checks"))
+    if check_requested:
+        check_names = []
+        if any(term in lower for term in ("程式語法", "python 語法", "compile", "編譯")):
+            check_names.append("python_compile")
+        if any(term in lower for term in ("訓練資料", "training data")):
+            check_names.append("training_data")
+        if any(term in lower for term in ("程式碼資料", "code data")):
+            check_names.append("code_data")
+        if any(term in lower for term in ("知識檢索", "knowledge")):
+            check_names.append("knowledge_tests")
+        if not check_names:
+            check_names = ["python_compile", "training_data", "code_data", "knowledge_tests"]
+        for name in dict.fromkeys(check_names):
+            result = dispatch_tool("run_project_check", {"check_name": name, "timeout_seconds": 120})
+            events.append(f"本機檢查 {name}：" + ("通過" if result.get("ok") else "失敗")
+                          + (f"（exit={result.get('exit_code')}）" if "exit_code" in result else ""))
+            snippets.append(json.dumps(result, ensure_ascii=False)[:5000])
+    return events, "\n".join(snippets)
+
+
 def run_workflow(generate, user_text):
     events = ["1. 理解原始需求", "2. 檢查本機格式技能指南", "3. 判斷是否需要外部查證",
               "4. 決定輸出形式", "5. 選擇本機語言引擎並建立計畫"]
+    tool_events, tool_context = _run_preflight_tools(user_text)
+    events.extend(tool_events)
     plan = plan_task(generate, user_text)
     if plan["needs_research"]:
         events.append("需要外部查證；目前沒有搜尋工具，不能宣稱已查證")
     if plan["task_size"] == "short":
-        content = _write_section(generate, user_text, plan, "完整回覆")
+        content = _write_section(generate, user_text, plan, "完整回覆", tool_context=tool_context)
         events.append("短內容一次生成")
     else:
         events.append("長內容先列大綱，再逐段生成")
         sections, summary = [], ""
         for title in plan["outline"]:
-            section = _write_section(generate, user_text, plan, title, summary)
+            section = _write_section(generate, user_text, plan, title, summary, tool_context=tool_context)
             sections.append(f"## {title}\n\n{section}")
             summary = "\n".join(sections)[-1800:]
             events.append(f"完成段落：{title}")
@@ -209,18 +249,26 @@ def run_workflow(generate, user_text):
     artifact_path = None
     if plan["needs_file"] and content:
         try:
-            ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
+            from kaptia_artifacts import export_artifact
+        except ImportError:
+            try:
+                from scripts.kaptia_artifacts import export_artifact
+            except ImportError:
+                export_artifact = None
+        try:
             stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-            suffix = {"presentation": "slides", "code": "code", "document": "document"}.get(plan["output_type"], "content")
-            artifact_path = ARTIFACTS_DIR / f"kaptia-{suffix}-{stamp}.md"
-            artifact_path.write_text(content + "\n", encoding="utf-8")
-            # Verify the delivered file can be read back and matches what was written.
-            if artifact_path.read_text(encoding="utf-8") != content + "\n":
-                raise OSError("交付檔案讀回內容不一致")
-            events.append(f"交付檔案已寫入並讀回核對：{artifact_path}")
+            format_map = {"document": "docx", "presentation": "pptx", "code": "txt",
+                          "table": "md", "text": "md", "other": "md"}
+            output_format = format_map.get(plan["output_type"], "md")
+            if export_artifact is None:
+                raise RuntimeError("交付工具模組無法載入")
+            result = export_artifact(content, output_type=output_format,
+                                     filename=f"kaptia-{plan['output_type']}-{stamp}")
+            artifact_path = Path(result["path"])
+            events.append(f"交付檔案已寫入並讀回驗證：{artifact_path}（{output_format}, SHA-256={result['sha256']}）")
         except Exception as exc:
             artifact_path = None
-            events.append(f"檔案交付失敗：{type(exc).__name__}: {exc}")
+            events.append(f"檔案交付失敗：{type(exc).__name__}: {exc}；內容仍保留在對話輸出中")
     events.append("8. 回報驗證結果與未完成查證")
     events.append("9. 簡短收尾")
     return {
