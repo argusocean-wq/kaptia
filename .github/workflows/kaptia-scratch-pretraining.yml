@@ -9,6 +9,7 @@ on:
       - "scripts/train_kaptia_scratch.py"
       - "scripts/chat.py"
       - "training/bootstrap_dialogue_seed.jsonl"
+      - "training/engineering_review_corpus.jsonl"
       - ".github/workflows/kaptia-scratch-pretraining.yml"
   workflow_dispatch:
 
@@ -39,9 +40,9 @@ jobs:
           key: kaptia-scratch-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
             kaptia-scratch-${{ github.ref_name }}-
-      - name: Prepare bundled text corpus
+      - name: Prepare original engineering review corpus
         run: |
-          python scripts/kaptia_prepare_text_corpus.py --input training/bootstrap_dialogue_seed.jsonl --output-dir training/scratch_corpus --val-fraction 0.10 --min-document-bytes 8
+          python scripts/kaptia_prepare_text_corpus.py --input training/engineering_review_corpus.jsonl --output-dir training/scratch_corpus --val-fraction 0.10 --min-document-bytes 32
           cat training/scratch_corpus/metadata.json
       - name: Train bootstrap model without overfitting indefinitely
         shell: bash
