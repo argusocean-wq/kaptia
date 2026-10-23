@@ -1,0 +1,34 @@
+{
+  "name": "kaptia-ask-context",
+  "displayName": "Kaptia: Ask About Selected Code",
+  "description": "Ask your local Kaptia scratch model to explain selected code from the editor context menu.",
+  "version": "0.1.0",
+  "publisher": "kaptia-local",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:kaptia.askAboutSelection"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "kaptia.askAboutSelection",
+        "title": "問問 Kaptia"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "kaptia.askAboutSelection",
+          "when": "editorTextFocus && editorHasSelection",
+          "group": "navigation@99"
+        }
+      ]
+    }
+  }
+}
