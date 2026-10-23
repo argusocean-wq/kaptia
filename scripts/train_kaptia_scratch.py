@@ -103,7 +103,14 @@ def main() -> None:
         best_val = float(checkpoint.get("best_validation_loss", checkpoint.get("metrics", {}).get("validation", {}).get("loss", float("inf"))))
         if start_step < 0:
             parser.error("Checkpoint has an invalid negative step.")
-        print(f"[INFO] Resuming random-init training at step {start_step}; no pretrained weights loaded.")
+        # Restore RNG states so resumed sampling follows the saved training trajectory.
+        if checkpoint.get("python_rng_state") is not None:
+            random.setstate(checkpoint["python_rng_state"])
+        if checkpoint.get("torch_rng_state") is not None:
+            torch.set_rng_state(checkpoint["torch_rng_state"].cpu())
+        if device.type == "cuda" and checkpoint.get("cuda_rng_state_all") is not None:
+            torch.cuda.set_rng_state_all(checkpoint["cuda_rng_state_all"])
+        print(f"[INFO] Resuming random-init training at step {start_step}; RNG state restored when available; no pretrained weights loaded.")
     log_path = args.output_dir / "training_log.jsonl"
     started = time.time()
     print(f"[INFO] Device: {device}; parameters: {sum(p.numel() for p in model.parameters()):,}")
@@ -139,6 +146,9 @@ def main() -> None:
                     "pretrained_source": None,
                     "initialization": "random",
                     "tokenizer": "UTF-8 byte tokenizer (256 tokens)",
+                    "python_rng_state": random.getstate(),
+                    "torch_rng_state": torch.get_rng_state(),
+                    "cuda_rng_state_all": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
                 }
                 torch.save(checkpoint, args.output_dir / "latest_checkpoint.pt")
                 if metrics["validation"]["loss"] < best_val:
