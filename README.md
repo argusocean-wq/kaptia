@@ -20,7 +20,11 @@ Kaptia 是以繁體中文為預設的本機文字 AI 助理。執行時不依賴
 
 - `scripts/open_kaptia.bat`：Windows 啟動器
 - `scripts/chat.py`：本機文字對話入口與流程紀錄
-- `scripts/kaptia_pipeline.py`：規劃、分段生成、審核與本機檔案交付
+- `scripts/kaptia_pipeline.py`：規劃、分段生成、工具結果注入、審核與本機檔案交付
+- `scripts/kaptia_tools.py`：允許清單式工具路由（本機知識檢索、受限檔案讀取、固定檢查命令；不提供任意 shell）
+- `scripts/kaptia_memory.py`：明確寫入的專案決策／任務／備註／阻礙記憶，不自動保存對話全文
+- `scripts/kaptia_artifacts.py`：Markdown、TXT、JSON、CSV、DOCX、PPTX 及受限 PDF 匯出與讀回驗證
+- `scripts/test_kaptia_tools.py`：工具權限、記憶與檔案交付回歸測試
 - `skills/format_guides.md`：本機格式技能指南
 - `scripts/setup_train.bat`：訓練環境設定
 - `scripts/train_qlora.py`：QLoRA/LoRA 微調流程
@@ -37,7 +41,7 @@ Kaptia 是以繁體中文為預設的本機文字 AI 助理。執行時不依賴
 - `knowledge/PROJECT_CONTEXT.md`：專案知識起始文件
 - `artifacts/`：執行時產生的本機交付檔案
 
-## Windows 啟動
+## 專案記憶指令（CLI）\n\n- `/memory list`：列出最近 30 筆明確保存的專案記憶。\n- `/memory add decision|標題|內容`：新增決策。\n- `/memory add task|標題|內容`：新增任務。\n- 同樣可用 `note` 或 `blocker`。記憶存於本機 `state/project_memory.jsonl`，不會自動同步到 GitHub。\n\n## 可選文件輸出依賴\n\n若要產生 Word／PowerPoint，安裝 `requirements-artifacts.txt`。中文 PDF 仍須另行配置字型；程式會在缺少字型支援時停止，不會輸出看似成功但缺字的檔案。\n\n## Windows 啟動
 
 1. 安裝 Python 3.10/3.11 與 NVIDIA 顯卡驅動（如要使用 GPU）。
 2. Clone 或下載此儲存庫。
@@ -62,7 +66,7 @@ Kaptia 是以繁體中文為預設的本機文字 AI 助理。執行時不依賴
 
 - 規劃器、生成器與審核器都使用同一個語言模型；分類與自我審核可能出錯。
 - 外部搜尋、Office/PDF 內容抽取、真正的 DOCX/PPTX/PDF 產生器、圖表工具與網頁 Artifact 發布尚未接入。
-- 檔案交付目前只產生 Markdown，並嘗試讀回核對；不是 Word、PowerPoint 或 PDF。
+- DOCX/PPTX 匯出需要可選套件；PDF 目前對中文內容會拒絕輸出，直到配置繁體中文字型。所有格式仍需目標電腦實機驗收。\n- 工具呼叫使用固定允許清單與固定檢查命令，不支援任意 shell；檔案讀取只允許清單內專案檔案。\n- 專案記憶只在使用者明確下指令時寫入，避免自動保存完整私人對話。
 - CUDA、PyTorch、顯卡驅動、模型下載、推論、檔案交付、adapter 載入與訓練都尚未在目標電腦驗收。
 - 不宣稱已執行未實際執行的安裝、訓練、編譯或測試。
 - 不要將 API 金鑰、密碼、私人對話或個資提交到 Git。
