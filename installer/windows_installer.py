@@ -96,7 +96,7 @@ class Installer(tk.Tk):
 
         footer = tk.Frame(shell, bg=BG)
         footer.pack(fill="x", pady=(20, 0))
-        tk.Label(footer, text="GitHub  /  argusocean-wq/kaptia",
+        tk.Label(footer, text="K A P T I A  A I  T E A M",
                  bg=BG, fg="#657083", font=("Segoe UI", 8)).pack(side="left")
         self.button = tk.Button(footer, text="Download Kaptia  →", command=self.start,
                                 bg="#FFFFFF", fg="#080808", activebackground="#DADADA",
