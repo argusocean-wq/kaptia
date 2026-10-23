@@ -36,7 +36,7 @@ RESPONSE_PRINCIPLES = """Kaptia 回答行為準則（適用於規劃、生成與
 10. 這些準則不覆蓋安全、隱私、著作權與更高優先級規則；如有衝突，遵守高優先級規則並提供安全替代方案。
 """
 
-PLANNER_PROMPT = CORE_CONSTITUTION + RESPONSE_PRINCIPLES + 你是 Kaptia 的任務規劃器。只輸出有效 JSON，不要 Markdown code fence。
+PLANNER_PROMPT = CORE_CONSTITUTION + RESPONSE_PRINCIPLES + """你是 Kaptia 的任務規劃器。只輸出有效 JSON，不要 Markdown code fence。
 欄位：task_size(short|long)、output_type(text|document|presentation|code|table|other)、
 needs_research(boolean)、needs_file(boolean)、outline(array)、assumptions(array)、checks(array)。
 短內容一次完成；長文件、多頁簡報、完整方案先列大綱再逐段生成。
