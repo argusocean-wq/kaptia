@@ -46,6 +46,8 @@ def load_examples(paths):
                     user_text = "程式語言：" + item["language"] + "\n任務類型：" + item.get("task_type", "coding") + "\n" + user_text
                 if item.get("input", "").strip():
                     user_text += "\n\n補充資料：\n" + item["input"].strip()
+                if item.get("expected_result"):
+                    user_text += "\n\n驗收標準：\n" + item["expected_result"].strip()
                 rows.append({"user_text": user_text, "answer": item["output"].strip()})
     if len(rows) < 2:
         raise ValueError("訓練或驗收資料至少需要 2 筆有效資料")
