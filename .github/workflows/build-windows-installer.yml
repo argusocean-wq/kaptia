@@ -33,8 +33,17 @@ jobs:
           python-version: "3.11"
       - name: Install PyInstaller
         run: python -m pip install --upgrade pyinstaller
+      - name: Embed release build number
+        shell: pwsh
+        run: |
+          @"
+          BUILD_NUMBER = $env:GITHUB_RUN_NUMBER
+          BUILD_TAG = "kaptia-build-$env:GITHUB_RUN_NUMBER"
+          "@ | Set-Content -Path installer/build_info.py -Encoding utf8
       - name: Build Windows executable
         run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name Kaptia-Setup installer/windows_installer.py
+      - name: Generate installer SHA-256 checksum
+        run: python -c "import hashlib,pathlib; p=pathlib.Path('dist/Kaptia-Setup.exe'); pathlib.Path('dist/Kaptia-Setup.exe.sha256').write_text(hashlib.sha256(p.read_bytes()).hexdigest()+'  Kaptia-Setup.exe', encoding='ascii')"
       - name: Publish versioned GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -46,6 +55,8 @@ jobs:
             If VS Code is installed, it also installs the '問問 Kaptia' right-click extension.
             The bootstrap checkpoint is experimental and not a general-capability language model.
           target_commitish: ${{ github.sha }}
-          files: dist/Kaptia-Setup.exe
+          files: |
+            dist/Kaptia-Setup.exe
+            dist/Kaptia-Setup.exe.sha256
           overwrite_files: true
           make_latest: true
