@@ -20,14 +20,16 @@ if not exist ".venv\Scripts\python.exe" (
 call .venv\Scripts\activate.bat
 python -m pip install --upgrade pip
 if errorlevel 1 exit /b 1
-
-echo Install a PyTorch build compatible with your NVIDIA driver/CUDA first if needed:
-echo https://pytorch.org/get-started/locally/
+echo Installing only PyTorch for Kaptia's randomly initialized scratch model.
 python -m pip install -r requirements.txt
 if errorlevel 1 exit /b 1
-python -m pip install -r requirements-train.txt
-if errorlevel 1 exit /b 1
 
-python -c "import torch; print('torch', torch.__version__, 'cuda_available', torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CUDA GPU not detected')"
-echo Setup commands finished. Check CUDA status above before starting training.
+if not exist "training\scratch_corpus\train.bin" (
+  python scripts\kaptia_prepare_text_corpus.py --input training\bootstrap_dialogue_seed.jsonl --output-dir training\scratch_corpus --val-fraction 0.10 --min-document-bytes 8
+  if errorlevel 1 exit /b 1
+)
+python scripts\train_kaptia_scratch.py --data-dir training\scratch_corpus --output-dir outputs\kaptia-scratch-pretrain --steps 1000 --eval-interval 100 --eval-batches 2 --batch-size 4 --block-size 128 --layers 2 --heads 2 --width 64 --context-length 256 --device auto
+if errorlevel 1 exit /b 1
+python -c "import torch; print('torch', torch.__version__, 'cuda_available', torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'Using CPU unless CUDA is configured')"
+echo Scratch training segment finished. Review the real training_log.jsonl and manifest.json before claiming model capability.
 endlocal
