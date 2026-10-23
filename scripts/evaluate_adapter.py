@@ -116,7 +116,8 @@ def main():
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     print(f"[Kaptia Eval] output={OUT_PATH}")
-    for eval_path in EVAL_PATHS:\n        print(f"[Kaptia Eval] {eval_path.name}_sha256={sha256(eval_path)}")
+    for eval_path in EVAL_PATHS:
+        print(f"[Kaptia Eval] {eval_path.name}_sha256={sha256(eval_path)}")
     print("[Kaptia Eval] 未自動判定 adapter 較好；請逐題人工評分並記錄理由。")
 
 
