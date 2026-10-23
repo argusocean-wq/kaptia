@@ -1,6 +1,6 @@
 """Kaptia local chat powered only by Kaptia's own randomly initialized scratch LM.
 
-No Transformers, Hugging Face model IDs, pretrained checkpoints, adapters, or network model downloads.
+No pretrained model IDs, external tokenizer, adapter, or network model download is used.
 """
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ import torch
 from torch.nn import functional as F
 
 from kaptia_scratch_model import ByteTokenizer, KaptiaScratchLM, ScratchConfig
-from kaptia_pipeline import run_workflow
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CHECKPOINT = ROOT / "outputs" / "kaptia-scratch-pretrain" / "best_checkpoint.pt"
@@ -45,7 +44,7 @@ def load_language_engine():
     tokenizer = ByteTokenizer()
     print(f"[Kaptia] 自有 scratch LM 已載入：{path}")
     print(f"[Kaptia] 裝置：{device}；訓練步數：{checkpoint.get('step', 0)}；成品模型權重：未使用")
-    print("[Kaptia] 注意：目前屬於小規模起步訓練，回答品質取決於實際語料與訓練進度。")
+    print("[Kaptia] 目前是小規模起步模型；回答可能不連貫，需用更多合法語料與計算持續訓練。")
     return tokenizer, model
 
 
@@ -53,17 +52,18 @@ def build_generator(tokenizer, model):
     device = next(model.parameters()).device
     end_ids = tokenizer.encode("<|end|>")
 
-    def generate(messages, max_new_tokens=256, temperature=0.8):
+    def generate(messages, max_new_tokens=256, temperature=0.45):
+        # Keep the training format compact so it fits the small bootstrap context.
         parts = []
-        for item in messages:
+        for item in messages[-6:]:
             role = str(item.get("role", "user")).strip().lower()
-            content = str(item.get("content", ""))
-            parts.append(f"<|{role}|>{content}\n")
+            if role not in {"user", "assistant"}:
+                continue
+            parts.append(f"<|{role}|>{str(item.get('content', ''))}")
         parts.append("<|assistant|>")
-        prompt = "".join(parts)
-        encoded = tokenizer.encode(prompt)
+        encoded = tokenizer.encode("".join(parts))
         if not encoded:
-            encoded = tokenizer.encode("<|user|>\n<|assistant|>")
+            encoded = tokenizer.encode("<|user|><|assistant|>")
         ids = torch.tensor([encoded], dtype=torch.long, device=device)
         generated: list[int] = []
         model.eval()
@@ -72,7 +72,6 @@ def build_generator(tokenizer, model):
                 context = ids[:, -model.config.context_length:]
                 logits = model(context)["logits"][:, -1, :]
                 logits = logits / max(0.15, float(temperature))
-                # Top-k sampling avoids spending all probability mass on the full byte vocabulary.
                 k = min(40, logits.shape[-1])
                 values, indices = torch.topk(logits, k=k, dim=-1)
                 probabilities = F.softmax(values, dim=-1)
@@ -90,7 +89,7 @@ def build_generator(tokenizer, model):
 
 def main() -> int:
     print("[Kaptia] 正在載入從零訓練的本機文字模型…")
-    print("[Kaptia] 不載入 Hugging Face、Ollama 或任何成品模型權重。")
+    print("[Kaptia] 不載入第三方成品模型權重。")
     try:
         tokenizer, model = load_language_engine()
         generate = build_generator(tokenizer, model)
@@ -99,6 +98,7 @@ def main() -> int:
         return 1
 
     print("[Kaptia] 已就緒。輸入 /exit 離開。")
+    history: list[dict[str, str]] = []
     while True:
         try:
             user_text = input("\n你：").strip()
@@ -110,12 +110,15 @@ def main() -> int:
             break
         if not user_text:
             continue
+        history.append({"role": "user", "content": user_text})
         try:
-            result = run_workflow(generate, user_text)
-            print("\nKaptia：\n" + result["content"])
-            print("\n[流程紀錄]")
-            for event in result["events"]:
-                print(f"- {event}")
+            answer = generate(history, max_new_tokens=256, temperature=0.45)
+            if not answer:
+                print("\nKaptia：目前沒有產生可顯示的文字。需要更多訓練資料與訓練步數。")
+            else:
+                print("\nKaptia：\n" + answer)
+            history.append({"role": "assistant", "content": answer})
+            history = history[-6:]
         except Exception as exc:
             print(f"[對話失敗] {type(exc).__name__}: {exc}", file=sys.stderr)
     return 0
