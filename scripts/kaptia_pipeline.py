@@ -44,7 +44,9 @@ CODE_GENERATION_RULES = """程式碼任務專用規則：
 - 檢查空值、錯誤輸入、邊界值、資源釋放、錯誤訊息、相容性及安全性；非平凡功能應提供可重現測試。
 - 修改既有專案時尊重現有架構與介面，避免無關重寫；說明修改檔案與相容性影響。
 - 不得根據模型自評就聲稱程式正確；只能回報實際執行過的有界測試。
-"""\n\nPLANNER_PROMPT = CORE_CONSTITUTION + RESPONSE_PRINCIPLES + """你是 Kaptia 的任務規劃器。只輸出有效 JSON，不要 Markdown code fence。
+"""
+
+PLANNER_PROMPT = CORE_CONSTITUTION + RESPONSE_PRINCIPLES + """你是 Kaptia 的任務規劃器。只輸出有效 JSON，不要 Markdown code fence。
 欄位：task_size(short|long)、output_type(text|document|presentation|code|table|other)、
 needs_research(boolean)、needs_file(boolean)、outline(array)、assumptions(array)、checks(array)。
 短內容一次完成；長文件、多頁簡報、完整方案先列大綱再逐段生成。
