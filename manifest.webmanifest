@@ -1,10 +1,10 @@
 {
-  "name": "Kaptia Local Workspace",
+  "name": "Kaptia Windows Download",
   "short_name": "Kaptia",
-  "description": "Kaptia 本機文字助理工作台",
+  "description": "Kaptia Windows 本機 AI 助理產品介紹與下載頁",
   "start_url": "./",
   "scope": "./",
-  "display": "standalone",
+  "display": "browser",
   "background_color": "#080808",
   "theme_color": "#080808",
   "icons": []
