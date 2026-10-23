@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import random
@@ -79,8 +80,14 @@ def main() -> None:
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
     device = torch.device("cuda" if args.device == "cuda" or (args.device == "auto" and torch.cuda.is_available()) else "cpu")
-    train_data = load_tokens(args.data_dir / "train.bin")
-    val_data = load_tokens(args.data_dir / "val.bin")
+    train_path = args.data_dir / "train.bin"
+    val_path = args.data_dir / "val.bin"
+    train_data = load_tokens(train_path)
+    val_data = load_tokens(val_path)
+    corpus_fingerprint = {
+        "train_sha256": hashlib.sha256(train_path.read_bytes()).hexdigest(),
+        "validation_sha256": hashlib.sha256(val_path.read_bytes()).hexdigest(),
+    }
     config = ScratchConfig(layers=args.layers, heads=args.heads, width=args.width, context_length=args.context_length)
     config.validate()
     model = KaptiaScratchLM(config).to(device)
@@ -101,6 +108,9 @@ def main() -> None:
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         start_step = int(checkpoint.get("step", 0))
         best_val = float(checkpoint.get("best_validation_loss", checkpoint.get("metrics", {}).get("validation", {}).get("loss", float("inf"))))
+        if checkpoint.get("corpus_fingerprint") != corpus_fingerprint:
+            print("[WARN] Corpus fingerprint changed or missing; resetting best-validation comparison for the new corpus.")
+            best_val = float("inf")
         if start_step < 0:
             parser.error("Checkpoint has an invalid negative step.")
         # Restore RNG states so resumed sampling follows the saved training trajectory.
@@ -146,6 +156,7 @@ def main() -> None:
                     "pretrained_source": None,
                     "initialization": "random",
                     "tokenizer": "UTF-8 byte tokenizer (256 tokens)",
+                    "corpus_fingerprint": corpus_fingerprint,
                     "python_rng_state": random.getstate(),
                     "torch_rng_state": torch.get_rng_state(),
                     "cuda_rng_state_all": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
@@ -164,6 +175,7 @@ def main() -> None:
                     "best_validation_loss": best_val,
                     "device": str(device),
                     "corpus_dir": str(args.data_dir),
+                    "corpus_fingerprint": corpus_fingerprint,
                     "log": str(log_path),
                 }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"[DONE] Training segment finished ({args.steps} additional steps). Checkpoints/log: {args.output_dir.resolve()}")
