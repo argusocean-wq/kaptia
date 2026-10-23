@@ -1,4 +1,4 @@
-"""Compare base Qwen and Kaptia adapter on the held-out project-knowledge set.
+"""Compare the configured base backend and Kaptia adapter on the held-out project-knowledge set.
 
 Writes one JSON object per eval prompt to outputs/kaptia-language-qlora/comparison.jsonl.
 This is a reproducible output capture, not an automatic quality score.
@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EVAL_PATHS = [ROOT / "training" / "eval_dataset.jsonl", ROOT / "training" / "code_eval_dataset.jsonl"]
 ADAPTER_DIR = ROOT / "outputs" / "kaptia-language-qlora" / "adapter"
 OUT_PATH = ROOT / "outputs" / "kaptia-language-qlora" / "comparison.jsonl"
-MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "Qwen/Qwen2.5-Coder-7B-Instruct")
+MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "HuggingFaceTB/SmolLM2-1.7B-Instruct")
 MAX_NEW_TOKENS = int(os.environ.get("KAPTIA_EVAL_MAX_NEW_TOKENS", "256"))
 
 
@@ -84,7 +84,7 @@ def main():
     # Run separate model instances sequentially so loading PEFT cannot contaminate
     # the base-model baseline. This also lowers peak memory usage.
     base_answers = []
-    print("[Kaptia Eval] Pass 1/2: base model")
+    print("[Kaptia Eval] Pass 1/2: configured base backend")
     base_model = AutoModelForCausalLM.from_pretrained(MODEL_ID, **common)
     base_model.eval()
     for index, row in enumerate(rows, 1):
