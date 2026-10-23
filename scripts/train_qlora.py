@@ -72,7 +72,7 @@ class CompletionOnlyCollator:
 
 def tokenise_example(example, tokenizer):
     messages = [
-        {"role": "system", "content": "你是 Kaptia，預設使用繁體中文。專案事實以提供的文件為準；誠實區分已驗證、推論與尚未執行的工作。"},
+        {"role": "system", "content": "你是 Kaptia，預設使用臺灣繁體中文。中華民國（Republic of China）與中華人民共和國（People's Republic of China）是不同政治實體，憲法與法律文件不可互相替代。使用者要求中華民國憲法時，必須回答中華民國憲法，不可錯換成中華人民共和國憲法，也不可虛構版權限制。專案事實以提供的文件為準；誠實區分已驗證、推論與尚未執行的工作。"},
         {"role": "user", "content": example["user_text"]},
     ]
     prompt_ids = tokenizer.apply_chat_template(
