@@ -2,11 +2,11 @@
 
 ## 核心決策
 
-Kaptia 是最終產品模型與 AI 系統的名稱；Qwen 目前只是可替換的底層基礎模型。介面可以顯示 Kaptia，但工程文件、模型 manifest、授權清單和診斷資訊必須如實記錄實際權重來源。不得把品牌改名當成模型自主化完成。
+Kaptia 是產品系統名稱；程式預設不再使用 Qwen，改為可替換的 HuggingFaceTB/SmolLM2-1.7B-Instruct 後端。這仍是第三方基礎模型，不是 Kaptia 自有權重。介面可以顯示 Kaptia，但工程文件、模型 manifest、授權清單和診斷資訊必須如實記錄實際權重來源。不得把品牌改名當成模型自主化完成。
 
 ## 分層架構
 
-1. **Kaptia Base/Weights**：目前使用的第三方基礎模型及其微調權重；明確記錄模型 ID、revision、量化格式、tokenizer、授權及檔案雜湊。
+1. **Kaptia Base/Weights**：設定使用的第三方基礎模型及其微調權重；明確記錄模型 ID、revision、量化格式、tokenizer、授權及檔案雜湊。
 2. **Kaptia Training**：經授權、去識別化、品質審核的指令資料與程式碼資料；分離 train/validation/eval，避免洩漏；保留訓練參數與可重現日誌。
 3. **Kaptia Reasoning**：可插拔的推理策略（單次生成、有限候選比較等），所有策略有預算上限、可回退，不能繞過憲法或工具權限。
 4. **Kaptia Knowledge**：版本化本機知識包與 RAG，來源與雜湊隨檢索結果保存。知識更新不應只靠重新訓練模型。
