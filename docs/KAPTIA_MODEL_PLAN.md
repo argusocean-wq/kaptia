@@ -47,3 +47,15 @@
 4. 檢查 `kaptia_model_manifest.json`、權重檔與 tokenizer。基礎模型及 adapter 的授權條款必須在散布前另外確認。
 5. 這個輸出是 Transformers 格式的獨立權重，不是 ONNX；不得直接將它當成可在 iPhone Safari 載入的檔案。ONNX 轉換、量化、下載校驗與真機測試仍是獨立工作。
 6. 執行 `python scripts/evaluate_adapter.py` 並人工盲評保留驗收集；合併成功只證明匯出步驟完成，不代表 Kaptia 品質已改善。
+
+
+## OptiLLM-inspired inference-time reasoning
+
+Kaptia now has an original, lightweight local reasoning wrapper in `scripts/kaptia_reasoning.py`. It is inspired by the general idea of spending bounded inference-time compute, not a copy of OptiLLM and not an implementation of its full algorithm catalogue.
+
+- Default: `KAPTIA_REASONING_MODE=single` — one generation, preserving current latency and memory use.
+- Optional: set `KAPTIA_REASONING_MODE=best_of_n` and `KAPTIA_REASONING_CANDIDATES=2` or `3` before launching Kaptia. It generates up to three candidate answers and uses the same model to select one.
+- Candidate count is clamped to 2–3. The selector is not an independent verifier; all candidates can share the same model's blind spots. Existing Kaptia review and constitution checks remain necessary.
+- This increases inference calls and latency, and may increase memory/energy use. It does not guarantee higher accuracy and does not train model weights.
+- This path applies to the Python pipeline only. It does not modify the Transformers.js browser inference path or establish iPhone Safari compatibility.
+- Run `python -m unittest scripts.test_kaptia_reasoning` to test the wrapper logic. This unit test does not test real model quality.
