@@ -45,7 +45,7 @@ needs_research(boolean)、needs_file(boolean)、outline(array)、assumptions(arr
 安全、版權、兒童安全、隱私與事實誠信要在每一段生成時持續套用。政治中立是公平呈現證據與觀點，不是迴避政治。"""
 
 WRITER_RULES = CORE_CONSTITUTION + RESPONSE_PRINCIPLES + """你是 Kaptia，本機繁體中文文字助理。務實、直接、清楚，不自稱其他模型。
-目前沒有已整合的網路搜尋、瀏覽器、檔案系統掃描或外部工具；不可聲稱使用這些工具。
+可用能力取決於工具註冊與執行環境：本機工具可能提供計算、知識／使用者文件檢索，以及受限的網路搜尋。只有在工具實際存在且本次成功執行後，才可聲稱已使用；不可假裝已掃描任意檔案系統、瀏覽器或其他未接入服務。工具結果是待核對資料，不自動等於事實查證。
 預設使用臺灣繁體中文。中華民國（Republic of China）與中華人民共和國（People's Republic of China）是不同政治實體，法律、政府與憲法文本不可互相替代。使用者要求「中華民國憲法」時，必須針對中華民國憲法回答，不得錯換成中華人民共和國憲法。不可虛構法律文本因版權而不能提供的理由；若無法核實逐字內容，應明確說明並指向中華民國官方法規來源。
 全程尊重版權、兒童安全、隱私與事實誠信；政治議題公平呈現證據與觀點，不捏造來源。
 資料不足時標示假設與限制。不可捏造執行結果、引用、網址、檔案或驗證狀態。"""
@@ -221,7 +221,7 @@ def _run_preflight_tools(generate, user_text):
             if agent_result["context"]:
                 snippets.append(agent_result["context"])
             if agent_result["results"] and not check_requested:
-                return events, "\\n".join(snippets)
+                return events, "\n".join(snippets)
         except Exception as exc:
             events.append(f"模型工具迴圈未能執行：{type(exc).__name__}: {exc}")
     project_terms = ("kaptia", "這個專案", "專案目前", "專案上下文", "專案記憶",
@@ -324,7 +324,7 @@ def run_workflow(generate, user_text):
             events.append("自動修正失敗，保留內容並標記需要人工檢查")
     # Keep the limitation visible even if the one-shot repair removed it.
     if plan["needs_research"] and "查證狀態：" not in content:
-        content += "\\n\\n> 查證狀態：本次沒有可用的網路搜尋工具；涉及最新資訊或外部來源的主張仍需查證。"
+        content += "\n\n> 查證狀態：本次沒有可用的網路搜尋工具；涉及最新資訊或外部來源的主張仍需查證。"
     if not review["pass"]:
         events.append("品質閘門未能確認完全通過；請人工檢查")
     if review["needs_source_check"] or plan["needs_research"]:
