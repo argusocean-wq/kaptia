@@ -42,7 +42,7 @@ python scripts\\train_kaptia_scratch.py --data-dir training\\scratch_corpus --ou
 - `auto` uses CUDA when available, otherwise CPU.
 - Training loss and validation loss/perplexity are appended to `training_log.jsonl`.
 - `latest_checkpoint.pt` is updated at evaluation intervals; `best_checkpoint.pt` is selected by validation loss; `manifest.json` records status and provenance.
-- This initial version does not implement resume-from-checkpoint or mixed precision.
+- Resume a previous scratch run from its latest checkpoint while keeping the same architecture: `python scripts\\train_kaptia_scratch.py --data-dir training\\scratch_corpus --output-dir outputs\\kaptia-scratch-pretrain --steps 1000 --eval-interval 100 --resume outputs\\kaptia-scratch-pretrain\\latest_checkpoint.pt --device auto`. `--steps` means additional steps for this run. Resume rejects checkpoints not explicitly marked `initialization=random` and `pretrained_source=null`, and rejects architecture mismatches. Only checkpoints produced by this project should be loaded. Mixed precision is not implemented.
 - No data is fetched from the network. The corpus must already exist locally.
 
 ## Data and evaluation cautions
