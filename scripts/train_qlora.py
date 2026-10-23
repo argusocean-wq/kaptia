@@ -21,7 +21,7 @@ from transformers import (
 ROOT = Path(__file__).resolve().parents[1]
 TRAIN_PATHS = [ROOT / "training" / "seed_dataset.jsonl", ROOT / "training" / "code_seed_dataset.jsonl"]
 EVAL_PATHS = [ROOT / "training" / "eval_dataset.jsonl", ROOT / "training" / "code_eval_dataset.jsonl"]
-OUTPUT_DIR = ROOT / "outputs" / "kaptia-language-qlora"
+OUTPUT_DIR = ROOT / "outputs" / "kaptia-smollm2-qlora"
 MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "HuggingFaceTB/SmolLM2-1.7B-Instruct")
 MAX_LENGTH = int(os.environ.get("KAPTIA_MAX_LENGTH", "1024"))
 TRAIN_BATCH_SIZE = int(os.environ.get("KAPTIA_BATCH_SIZE", "1"))
