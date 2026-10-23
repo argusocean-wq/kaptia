@@ -102,10 +102,10 @@ def dispatch_tool(name, arguments):
     }
     # Optional extended tools are loaded lazily so the core CLI still works without RAG deps.
     try:
-        from kaptia_extended_tools import dispatch_extended_tool
+        from kaptia_extended_tools import dispatch_tool as dispatch_extended_tool
     except ImportError:
         try:
-            from scripts.kaptia_extended_tools import dispatch_extended_tool
+            from scripts.kaptia_extended_tools import dispatch_tool as dispatch_extended_tool
         except ImportError:
             dispatch_extended_tool = None
     if dispatch_extended_tool is not None:
@@ -114,7 +114,6 @@ def dispatch_tool(name, arguments):
             "web_search": lambda **kw: dispatch_extended_tool("web_search", kw),
             "ingest_user_documents": lambda **kw: dispatch_extended_tool("ingest_user_documents", kw),
             "search_user_documents": lambda **kw: dispatch_extended_tool("search_user_documents", kw),
-            "get_domain_config": lambda **kw: dispatch_extended_tool("get_domain_config", kw),
         })
     function = registry.get(name)
     if function is None:
