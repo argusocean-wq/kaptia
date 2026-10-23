@@ -95,6 +95,29 @@ def main():
             break
         if not user_text:
             continue
+        if user_text == "/memory list":
+            try:
+                from kaptia_memory import list_records
+                records = list_records(limit=30)
+                print("[專案記憶] " + (f"共 {len(records)} 筆" if records else "目前沒有紀錄"))
+                for row in records:
+                    print(f"- [{row['kind']}/{row['status']}] {row['title']}: {row['detail']}")
+            except Exception as exc:
+                print(f"[記憶讀取失敗] {type(exc).__name__}: {exc}", file=sys.stderr)
+            continue
+        if user_text.startswith("/memory add "):
+            try:
+                from kaptia_memory import append_record
+                parts = user_text[len("/memory add "):].split("|", 2)
+                if len(parts) != 3:
+                    print("格式：/memory add decision|標題|內容")
+                    print("kind 可用 decision、task、note、blocker；只會寫入你明確指定的專案資訊。")
+                else:
+                    record = append_record(parts[0].strip(), parts[1].strip(), parts[2].strip())
+                    print(f"[專案記憶已保存] {record['kind']}: {record['title']}")
+            except Exception as exc:
+                print(f"[記憶寫入失敗] {type(exc).__name__}: {exc}", file=sys.stderr)
+            continue
         try:
             result = run_workflow(generate, user_text)
             print("\nKaptia：\n" + result["content"])
