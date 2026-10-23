@@ -33,6 +33,10 @@ Kaptia 加入了原創的輕量候選比較策略，參考「推論時增加有�
 - 目前僅接入 Python 推論流程，不會自動影響網頁端 Transformers.js/ONNX 或 iPhone Safari。
 - 測試：`python -m unittest discover -s scripts -p "test_*.py"`。
 
+## Kaptia 模型自主化
+
+Kaptia 是完整模型系統的產品名稱，Qwen 只是目前可替換的底層基礎模型。模型自主化路線、訓練階段、權重來源透明度與發布門檻見 [`docs/KAPTIA_MODEL_AUTONOMY_ROADMAP.md`](docs/KAPTIA_MODEL_AUTONOMY_ROADMAP.md)。品牌名稱不等於獨立訓練權重；目前仍需完成實際訓練、盲評、模型轉換及 Windows/iPhone 端到端驗收。
+
 ## 核心憲法與安全邊界
 
 - `docs/KAPTIA_CONSTITUTION.md`：定義不得故意傷害人類、尊重著作權與授權、保護隱私、不得捏造驗證結果等高優先級原則。
