@@ -69,5 +69,57 @@ class DispatchAndDomainTests(unittest.TestCase):
                     tools.get_domain_config()
 
 
+class RagIndexPointerTests(unittest.TestCase):
+    def test_invalid_pointer_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            pointer = root / "CURRENT"
+            indexes = root / "indexes"
+            indexes.mkdir()
+            pointer.write_text("../outside", encoding="ascii")
+            with patch.object(tools, "VECTOR_DIR", root), \
+                 patch.object(tools, "CURRENT_INDEX_FILE", pointer), \
+                 patch.object(tools, "INDEXES_DIR", indexes):
+                with self.assertRaises(ValueError):
+                    tools._resolve_active_index_dir()
+
+    def test_current_resolves_only_valid_versioned_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            indexes = root / "indexes"
+            index_id = "index-" + "a" * 32
+            index_dir = indexes / index_id
+            index_dir.mkdir(parents=True)
+            pointer = root / "CURRENT"
+            pointer.write_text(index_id + "\\n", encoding="ascii")
+            with patch.object(tools, "VECTOR_DIR", root), \
+                 patch.object(tools, "CURRENT_INDEX_FILE", pointer), \
+                 patch.object(tools, "INDEXES_DIR", indexes):
+                self.assertEqual(tools._resolve_active_index_dir(), index_dir)
+
+    def test_missing_pointer_allows_legacy_layout_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name in ("vectors.npy", "documents.json", "manifest.json"):
+                (root / name).write_text("legacy", encoding="utf-8")
+            with patch.object(tools, "VECTOR_DIR", root), \
+                 patch.object(tools, "CURRENT_INDEX_FILE", root / "CURRENT"), \
+                 patch.object(tools, "INDEXES_DIR", root / "indexes"):
+                self.assertEqual(tools._resolve_active_index_dir(), root)
+
+    def test_atomic_pointer_switch_preserves_previous_pointer_on_replace_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            root.mkdir(exist_ok=True)
+            pointer = root / "CURRENT"
+            pointer.write_text("index-" + "b" * 32 + "\\n", encoding="ascii")
+            with patch.object(tools, "VECTOR_DIR", root), \
+                 patch.object(tools, "CURRENT_INDEX_FILE", pointer), \
+                 patch("kaptia_extended_tools.os.replace", side_effect=OSError("simulated crash")):
+                with self.assertRaises(OSError):
+                    tools._publish_index_pointer("index-" + "c" * 32)
+            self.assertEqual(pointer.read_text(encoding="ascii").strip(), "index-" + "b" * 32)
+
+
 if __name__ == "__main__":
     unittest.main()
