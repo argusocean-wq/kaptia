@@ -32,13 +32,27 @@ jobs:
           python-version: "3.11"
       - name: Install CPU PyTorch
         run: python -m pip install --upgrade pip torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Restore previous Kaptia scratch checkpoint cache
+        uses: actions/cache/restore@v4
+        with:
+          path: outputs/kaptia-scratch-pretrain
+          key: kaptia-scratch-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            kaptia-scratch-${{ github.ref_name }}-
       - name: Prepare bundled text corpus
         run: |
           python scripts/kaptia_prepare_text_corpus.py --input training/bootstrap_dialogue_seed.jsonl --output-dir training/scratch_corpus --val-fraction 0.10 --min-document-bytes 8
           cat training/scratch_corpus/metadata.json
-      - name: Train Kaptia from random initialization
+      - name: Continue training from the last Kaptia checkpoint
+        shell: bash
         run: |
-          python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 10000 --eval-interval 500 --eval-batches 2 --batch-size 4 --block-size 128 --layers 2 --heads 2 --width 64 --context-length 256 --device cpu
+          if [ -f outputs/kaptia-scratch-pretrain/latest_checkpoint.pt ]; then
+            echo "Found Kaptia checkpoint; continuing for 1000 additional steps."
+            python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 1000 --eval-interval 500 --eval-batches 2 --batch-size 4 --block-size 128 --layers 2 --heads 2 --width 64 --context-length 256 --device cpu --resume outputs/kaptia-scratch-pretrain/latest_checkpoint.pt
+          else
+            echo "No checkpoint cache found; initializing randomly and training for 10000 steps."
+            python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 10000 --eval-interval 500 --eval-batches 2 --batch-size 4 --block-size 128 --layers 2 --heads 2 --width 64 --context-length 256 --device cpu
+          fi
       - name: Verify checkpoint provenance and training progress
         run: |
           python - <<'PY'
@@ -68,6 +82,11 @@ jobs:
           KAPTIA_SCRATCH_CHECKPOINT: outputs/kaptia-scratch-pretrain/best_checkpoint.pt
         run: |
           printf '你好。\n/exit\n' | python scripts/chat.py
+      - name: Save checkpoint cache for the next training run
+        uses: actions/cache/save@v4
+        with:
+          path: outputs/kaptia-scratch-pretrain
+          key: kaptia-scratch-${{ github.ref_name }}-${{ github.run_id }}
       - name: Upload checkpoint, manifest, logs, and corpus metadata
         uses: actions/upload-artifact@v4
         with:
