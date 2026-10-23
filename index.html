@@ -2,320 +2,63 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080808">
-<meta name="description" content="Kaptia 本機文字助理控制台">
-<link rel="manifest" href="./manifest.webmanifest">
-<title>Kaptia</title>
+<meta name="description" content="Kaptia Windows 本機 AI 助理。下載桌面啟動器，在自己的電腦下載模型並本機執行。">
+<title>Kaptia — 本機 AI 助理</title>
 <style>
-:root{color-scheme:dark;--bg:#080808;--panel:#101010;--panel2:#151515;--line:#292929;--muted:#909090;--white:#f5f5f5}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--white);font:14px/1.5 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;overflow-x:hidden}
-#ambient{position:fixed;inset:-25%;z-index:-2;pointer-events:none;filter:blur(55px);opacity:.19}
-.blob{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff 0,#aaa 16%,#555 35%,#151515 65%,transparent 72%);mix-blend-mode:screen;animation:drift 24s ease-in-out infinite alternate}
-.blob.one{width:55vw;height:55vw;top:2%;left:8%}.blob.two{width:44vw;height:44vw;right:4%;top:30%;animation-duration:31s;animation-delay:-9s}.blob.three{width:34vw;height:34vw;bottom:0;left:35%;animation-duration:27s;animation-delay:-14s}
-@keyframes drift{0%{transform:translate3d(-4%,2%,0) scale(.86)}50%{transform:translate3d(7%,-5%,0) scale(1.08)}100%{transform:translate3d(-2%,8%,0) scale(.96)}}
-body.thinking #ambient{opacity:.42;filter:blur(40px)}body.thinking .blob{animation-duration:5s}body.thinking .blob.two{animation-duration:7s}
-body.thinking .thinking-orbit{opacity:1;animation:spin 2.8s linear infinite}body.thinking .core{box-shadow:0 0 42px #fff4,0 0 100px #fff2;transform:scale(1.06)}
-@keyframes spin{to{transform:rotate(360deg)}}
-.app{display:grid;grid-template-columns:238px minmax(0,1fr);min-height:100vh;max-width:1600px;margin:auto}
-aside{padding:24px 16px;border-right:1px solid #222;background:#080808cc;backdrop-filter:blur(20px);display:flex;flex-direction:column;gap:22px}
-.brand{display:flex;align-items:center;gap:11px;padding:2px 8px 18px}.mark{width:30px;height:30px;border:1px solid #777;border-radius:10px;position:relative;overflow:hidden}.mark:after{content:"";position:absolute;inset:7px;border:1px solid #eee;border-radius:50%;box-shadow:0 0 15px #fff8}
-.brand b{letter-spacing:.16em;font-size:14px}.brand small{display:block;color:#777;font-size:10px;letter-spacing:.12em}
-.navlabel{font-size:10px;color:#666;letter-spacing:.16em;padding:0 10px 8px}.nav{display:grid;gap:5px}.nav button,.ghost{background:transparent;color:#aaa;border:1px solid transparent;text-align:left;border-radius:10px;padding:10px 12px;cursor:pointer;font:inherit}.nav button:hover,.nav button.active{background:#171717;color:#fff;border-color:#292929}
-.sidebottom{margin-top:auto;display:grid;gap:10px}.mini{padding:12px;border:1px solid #292929;border-radius:12px;background:#101010}.mini span{color:#777;font-size:11px}.mini strong{display:block;margin-top:5px;font-size:12px;font-weight:500}
-main{min-width:0;padding:24px clamp(18px,4vw,54px) 32px;display:flex;flex-direction:column}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #222;padding-bottom:18px}.eyebrow{color:#888;font-size:10px;letter-spacing:.18em}.status{display:flex;align-items:center;gap:8px;color:#aaa;font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:#888;box-shadow:0 0 10px #fff4}
-.pill{border:1px solid #333;border-radius:999px;padding:7px 11px;color:#bbb;background:#111;font-size:11px}
-.content{width:100%;max-width:900px;margin:clamp(30px,7vh,76px) auto 0}.hero{text-align:center}.core-wrap{height:110px;display:grid;place-items:center;position:relative;margin-bottom:25px}.core{width:62px;height:62px;border:1px solid #aaa;border-radius:50%;background:radial-gradient(circle at 35% 25%,#fff 0,#bdbdbd 9%,#555 24%,#141414 60%);transition:transform .5s,box-shadow .5s;position:relative}.thinking-orbit{position:absolute;width:88px;height:88px;border:1px solid #777;border-left-color:transparent;border-right-color:#eee;border-radius:50%;opacity:0;transition:opacity .3s}.thinking-orbit:after{content:"";position:absolute;top:7px;left:10px;width:5px;height:5px;background:white;border-radius:50%;box-shadow:0 0 12px white}
-h1{font-size:clamp(30px,4vw,46px);letter-spacing:-.05em;margin:0;font-weight:500}.subtitle{color:#888;margin:12px 0 28px}.prompt{display:flex;align-items:flex-end;gap:10px;padding:12px;border:1px solid #393939;background:#101010e8;border-radius:18px;box-shadow:0 12px 55px #0008}.prompt textarea{flex:1;resize:vertical;min-height:42px;max-height:180px;border:0;outline:0;background:transparent;color:#f5f5f5;font:inherit;padding:10px 8px}.prompt textarea::placeholder{color:#777}.send{border:1px solid #eee;background:#f3f3f3;color:#111;border-radius:12px;padding:10px 16px;font-weight:600;cursor:pointer}.send:disabled{opacity:.35;cursor:not-allowed}.hint{color:#666;font-size:11px;margin:12px 4px 0}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:26px}.card{border:1px solid #282828;border-radius:15px;padding:16px;background:#0e0e0edb;min-height:112px}.card h3{font-size:12px;font-weight:500;color:#ddd;margin:0 0 10px}.card p{margin:0;color:#858585;font-size:12px;overflow-wrap:anywhere}.card .value{color:#f3f3f3;font-size:14px;margin-top:6px}.result{white-space:pre-wrap;overflow-wrap:anywhere;margin:18px 0 0;padding:20px;border:1px solid #292929;border-radius:15px;background:#0d0d0d;display:none}.result.visible{display:block}.result .who{color:#888;font-size:10px;letter-spacing:.16em;margin-bottom:10px}.notice{margin-top:16px;padding:12px 14px;border-left:2px solid #777;color:#888;background:#111;font-size:12px}
-button:focus-visible,textarea:focus-visible{outline:2px solid white;outline-offset:3px}
-.mobile-nav{display:none}
-@media(max-width:760px){
-  html{scroll-padding-bottom:calc(92px + env(safe-area-inset-bottom))}
-  body{font-size:15px;padding-bottom:calc(78px + env(safe-area-inset-bottom))}
-  .app{display:block;min-height:100dvh}
-  aside{display:none}
-  main{padding:14px 14px calc(22px + env(safe-area-inset-bottom))}
-  .top{padding:8px 2px 14px;gap:8px}
-  .top .eyebrow{font-size:9px;letter-spacing:.12em}
-  .status{font-size:10px;text-align:right;max-width:46%}
-  .content{margin:24px auto 0}
-  #chatView.content{margin-top:20px}
-  .hero .core-wrap{height:68px;margin-bottom:14px}
-  .core{width:48px;height:48px}
-  .thinking-orbit{width:66px;height:66px}
-  h1{font-size:clamp(27px,8vw,36px);line-height:1.15}
-  .subtitle{font-size:13px;margin:9px 0 20px}
-  .model-panel{padding:12px!important;margin-bottom:10px!important}
-  .model-panel strong{font-size:13px!important}
-  #modelBtn{min-height:42px;padding:10px 12px}
-  .prompt{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom));z-index:5;gap:6px;padding:8px;border-radius:16px;box-shadow:0 8px 28px #000b;background:#101010f5;backdrop-filter:blur(18px)}
-  .prompt textarea{min-height:44px;max-height:120px;font-size:16px;padding:10px 7px}
-  .send{min-height:44px;padding:10px 13px;white-space:nowrap}
-  .hint{font-size:10px;line-height:1.5;margin:8px 3px}
-  .result{padding:15px;margin-top:14px;font-size:14px}
-  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:18px}
-  .card{padding:12px;min-height:100px;border-radius:13px}
-  .card h3{font-size:11px}
-  .card p{font-size:11px;line-height:1.4}
-  .card .value{font-size:12px;overflow-wrap:anywhere}
-  .notice{font-size:11px;line-height:1.55;margin-top:12px}
-  .mobile-nav{position:fixed;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;left:0;right:0;bottom:0;z-index:20;padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-top:1px solid #292929;background:#080808ed;backdrop-filter:blur(22px)}
-  .mobile-nav button{min-height:46px;border:1px solid transparent;border-radius:12px;background:transparent;color:#888;font:inherit;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
-  .mobile-nav button.active{color:#fff;background:#171717;border-color:#303030}
-  #machineView .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  #repoView .card{min-height:auto}
-}
-@media(max-width:360px){
-  main{padding-left:10px;padding-right:10px}
-  .grid,#machineView .grid{grid-template-columns:1fr}
-  .model-panel>div:first-child{align-items:flex-start}
-  #modelBtn{width:100%}
-}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}#ambient{display:none}}
-/* ChatGPT-inspired monochrome workspace */
-:root{color-scheme:dark;--bg:#212121;--panel:#2f2f2f;--panel2:#383838;--line:#424242;--muted:#b4b4b4;--white:#f5f5f5}
-body{background:#212121}#ambient{display:none}
-.app{max-width:none;grid-template-columns:260px minmax(0,1fr);min-height:100dvh}
-aside{background:#171717;border-right:0;padding:18px 12px 14px;gap:18px}
-.brand{padding:4px 8px 12px}.brand b{letter-spacing:.08em}
-.sidebar-chat-tools{display:grid;gap:14px}
-.sidebar-new-chat{min-height:42px;width:100%;border:1px solid #424242;border-radius:10px;background:transparent;color:#eee;text-align:left;padding:9px 12px;font:inherit;cursor:pointer}
-.sidebar-new-chat:hover{background:#252525}
-.navlabel{color:#9a9a9a;letter-spacing:.04em;font-size:12px;padding:0 10px 7px}
-.nav{gap:3px}.nav button,.ghost{border-radius:9px;padding:9px 11px;color:#d4d4d4}
-.nav button:hover,.nav button.active{background:#2a2a2a;border-color:transparent;color:#fff}
-.desktop-history{display:flex;flex-direction:column;min-height:0;flex:1}
-.desktop-history .history-list{max-height:calc(100dvh - 340px)}
-.desktop-history .history-open{padding:9px 10px;font-size:13px}
-.desktop-history .history-delete{width:32px;height:34px}
-.sidebottom{border-top:1px solid #333;padding-top:12px;gap:6px}
-.mini{border:0;background:transparent;padding:8px 10px}.mini span{color:#aaa}.mini strong{color:#eee;font-size:12px}
-main{padding:0 clamp(22px,5vw,64px) 28px;background:#212121}
-.top{border-bottom:1px solid #343434;padding:16px 0}
-.top-brand .eyebrow{display:none}.top-subtitle{font-size:14px;color:#eee;margin:0}
-.status{color:#b5b5b5}.dot{background:#bcbcbc;box-shadow:none}
-.content{max-width:820px;margin:0 auto}
-#chatView.content{display:flex;flex-direction:column;min-height:calc(100dvh - 74px);margin:0 auto;padding-top:clamp(50px,12vh,130px);padding-bottom:16px}
-#emptyHero{width:100%;margin:auto 0 26px}.hero .core-wrap{display:none}
-.hero h1{font-size:clamp(28px,3.2vw,36px);font-weight:500;letter-spacing:-.035em}
-.hero .subtitle{color:#aaa;margin:12px 0 26px}
-.suggestion-grid{max-width:650px;margin:0 auto 10px;gap:10px}
-.suggestion{background:transparent;border-color:#484848;color:#e5e5e5;border-radius:14px;min-height:58px}
-.suggestion:hover{background:#2b2b2b}.suggestion span{color:#aaa}
-.conversation{max-width:820px;gap:28px;margin:0 auto 24px}
-.user-message{background:#303030;border:0;border-radius:22px}
-.assistant-message{padding:2px 0}.message-body{font-size:15px;line-height:1.8}
-.prompt{width:100%;max-width:820px;margin:0 auto;padding:8px 10px 8px 16px;border:1px solid #505050;background:#2f2f2f;border-radius:28px;box-shadow:none;gap:8px}
-.prompt textarea{font-size:15px;min-height:42px;max-height:180px;padding:10px 2px;color:#fff}
-.prompt textarea::placeholder{color:#b0b0b0}
-.send{border:0;background:#f5f5f5;color:#171717;border-radius:50%;width:40px;height:40px;min-width:40px;padding:0;font-size:0;position:relative}
-.send:after{content:"↑";font-size:21px;font-weight:600}.send:disabled{opacity:.4}
-.hint{max-width:820px;width:100%;margin:10px auto 0;text-align:center;color:#999;font-size:11px}
-#chatView>.model-panel{max-width:820px;width:100%;margin:0 auto 12px!important;background:transparent!important;border-color:#424242!important}
-#chatView>.grid,#chatView>.notice{display:none}
-.result.visible{max-width:820px;width:100%;margin:14px auto 0;background:#262626;border-color:#444}
-.message-actions button{background:transparent;border-color:#454545;color:#bbb}
-.history-drawer{background:#171717;border-right:1px solid #383838}
-.settings-sheet{background:#202020;border-color:#444}
-.card{background:#292929;border-color:#444}.pill{background:#292929;border-color:#484848;color:#ddd}
-@media(max-width:760px){
- .app{display:block;min-height:100dvh}aside{display:none}
- main{padding:0 16px calc(16px + env(safe-area-inset-bottom))}
- .app-top{margin:0 -16px;padding:10px 14px 12px;background:#212121ed;border-bottom:1px solid #343434}
- .top-subtitle{font-size:14px}
- #chatView.content{min-height:calc(100dvh - 70px);padding-top:clamp(70px,16vh,140px);padding-bottom:10px}
- .hero h1{font-size:27px}.hero .subtitle{font-size:14px}
- .suggestion-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
- .suggestion{background:transparent;border-color:#454545;min-height:62px}
- .prompt{position:sticky;bottom:calc(6px + env(safe-area-inset-bottom));background:#2f2f2f;border-color:#505050}
- .prompt .send{width:40px;height:40px;min-width:40px}
- .hint{font-size:10px;padding-bottom:4px}
- #chatView>.model-panel{margin-top:0!important}
-}
-
-</style>
-<style id="mobile-chat-overrides">
-.app-top{display:flex;align-items:center;gap:12px}
-.mobile-icon{display:none;align-items:center;justify-content:center;width:42px;height:42px;border:1px solid #303030;border-radius:14px;background:#111;color:#f5f5f5;font-size:22px;cursor:pointer;flex-shrink:0}
-.top-brand{min-width:0}.top-subtitle{margin-top:3px;font-size:12px;color:#999}.top-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
-.conversation{width:100%;max-width:820px;margin:12px auto 24px;display:grid;gap:24px}
-.message{max-width:100%;min-width:0}.message-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;font-size:15px}.user-message{justify-self:end;max-width:min(82%,680px);padding:12px 16px;background:#202020;border:1px solid #303030;border-radius:22px}.assistant-message{justify-self:stretch;padding:2px 0}.message-actions{display:flex;gap:8px;margin-top:10px}.message-actions button{min-height:40px;padding:7px 12px;border:1px solid #303030;border-radius:10px;background:#111;color:#aaa;font:inherit;font-size:12px;cursor:pointer}
-.suggestion-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:640px;margin:28px auto 10px}.suggestion{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;min-height:58px;padding:12px 14px;border:1px solid #303030;border-radius:16px;background:#101010;color:#ddd;font:inherit;cursor:pointer}.suggestion span{color:#777}.suggestion:hover{background:#191919}
-.drawer-scrim{position:fixed;inset:0;background:#0009;z-index:50}.history-drawer{position:fixed;z-index:51;inset:0 auto 0 0;width:min(340px,88vw);padding:16px;background:#0d0d0d;border-right:1px solid #303030;display:flex;flex-direction:column;gap:14px;transform:translateX(-105%);transition:transform .22s ease;box-shadow:20px 0 60px #0008}.history-drawer.open{transform:translateX(0)}.drawer-head,.settings-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.drawer-head strong,.settings-head strong{font-size:17px}.drawer-new{width:100%;min-height:46px;border:1px solid #333;border-radius:14px;background:#171717;color:#eee;text-align:left;padding:10px 14px;font:inherit;cursor:pointer}.history-list{overflow:auto;display:grid;gap:4px;align-content:start;flex:1}.history-row{display:flex;align-items:center;gap:6px;border-radius:10px}.history-row.active{background:#202020}.history-open{flex:1;min-width:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:12px;border:0;background:transparent;color:#ddd;font:inherit;cursor:pointer}.history-delete{width:40px;height:40px;border:0;background:transparent;color:#888;font-size:20px;cursor:pointer}.history-empty{padding:12px;color:#777;font-size:13px}.drawer-footer{border-top:1px solid #292929;padding-top:10px;display:grid;gap:5px}.drawer-footer button{min-height:44px;border:0;border-radius:10px;background:transparent;color:#bbb;text-align:left;padding:10px 12px;font:inherit;cursor:pointer}.drawer-footer button:hover{background:#1b1b1b}
-.settings-sheet{position:fixed;z-index:60;inset:auto 0 0;max-height:88dvh;overflow:auto;padding:20px 18px calc(22px + env(safe-area-inset-bottom));border:1px solid #333;border-bottom:0;border-radius:22px 22px 0 0;background:#0d0d0d;box-shadow:0 -18px 70px #000a}.settings-sheet[hidden]{display:none}.settings-head{margin-bottom:18px}
-@media(max-width:760px){body{padding-bottom:calc(20px + env(safe-area-inset-bottom))}.app{display:block}.app-top{position:sticky;top:0;z-index:15;background:#080808ed;backdrop-filter:blur(20px);margin:0 -14px;padding:8px 14px 12px}.mobile-icon{display:flex}.top-brand .eyebrow{font-size:11px;letter-spacing:.14em}.top-subtitle{font-size:11px}.top-actions .status{max-width:130px;font-size:10px}.mobile-nav{display:none!important}.content{margin:18px auto 0}#chatView.content{display:flex;flex-direction:column;min-height:calc(100dvh - 90px);margin-top:12px}#machineView,#repoView{padding-bottom:30px}.hero .core-wrap{display:none}.hero h1{font-size:27px}.hero .subtitle{margin:8px 0 18px}.suggestion-grid{gap:8px;margin:20px 0 14px}.suggestion{min-height:62px;padding:10px;border-radius:14px;font-size:12px}.conversation{gap:22px;margin:8px auto 18px}.user-message{max-width:88%;padding:11px 14px;border-radius:20px}.message-body{font-size:15px}.message-actions button{min-height:44px}.prompt{position:sticky;bottom:calc(6px + env(safe-area-inset-bottom));margin-top:auto;z-index:10;padding:7px;border-radius:24px;background:#171717;border-color:#3a3a3a;box-shadow:0 8px 30px #000a}.prompt textarea{min-height:42px;max-height:150px;font-size:16px}.prompt .send{width:42px;height:42px;min-width:42px;padding:0;border-radius:50%;font-size:21px}.hint{font-size:10px;margin:7px 5px 0}.model-panel{display:none!important}#result{margin-top:12px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.notice{margin-bottom:10px}.settings-sheet{display:block}.settings-sheet[hidden]{display:none!important}}
-@media(max-width:360px){.top-actions .status{max-width:95px}.suggestion-grid{grid-template-columns:1fr}.suggestion{min-height:48px}.grid,#machineView .grid{grid-template-columns:1fr}}
+:root{color-scheme:dark;--bg:#080808;--panel:#111;--line:#292929;--muted:#a2a2a2;--fg:#f5f5f5}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0,#202020 0,transparent 48%),var(--bg);color:var(--fg);font:16px/1.65 Inter,"Segoe UI",system-ui,sans-serif}
+a{color:inherit}.wrap{width:min(1040px,calc(100% - 36px));margin:auto}.top{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #242424}.brand{font-size:14px;letter-spacing:.22em;font-weight:700}.tag{font-size:12px;color:#aaa;border:1px solid #333;border-radius:99px;padding:5px 10px}
+.hero{text-align:center;padding:clamp(70px,13vh,132px) 0 80px}.orb{width:70px;height:70px;margin:0 auto 28px;border:1px solid #999;border-radius:50%;background:radial-gradient(circle at 35% 25%,#fff,#777 15%,#171717 62%);box-shadow:0 0 70px #ffffff13}
+h1{font-size:clamp(42px,8vw,78px);letter-spacing:-.065em;line-height:1.05;margin:0;font-weight:550}.lead{color:#b6b6b6;max-width:650px;margin:22px auto 30px;font-size:clamp(16px,2vw,19px)}
+.actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;border-radius:12px;text-decoration:none;font-weight:650;border:1px solid #eee;background:#f5f5f5;color:#080808}.btn.secondary{background:#141414;color:#eee;border-color:#393939}.note{font-size:12px;color:#888;margin-top:15px}
+section{padding:48px 0;border-top:1px solid #242424}.eyebrow{font-size:11px;letter-spacing:.2em;color:#929292;text-transform:uppercase}h2{font-size:clamp(25px,4vw,36px);letter-spacing:-.035em;font-weight:550;margin:8px 0 22px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.card{border:1px solid var(--line);background:#101010a8;border-radius:16px;padding:20px}.num{color:#777;font-size:12px;letter-spacing:.12em}.card h3{font-size:16px;margin:12px 0 7px}.card p,.copy{font-size:14px;color:#aaa;margin:0}.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.step{border-top:1px solid #555;padding-top:16px}.step strong{display:block;margin:8px 0}.requirements{display:grid;grid-template-columns:1fr 1fr;gap:12px}.req{padding:18px;border-radius:14px;background:#111;border:1px solid #282828}.req strong{display:block;margin-bottom:5px}.footer{padding:30px 0 45px;color:#777;font-size:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.footer a{color:#aaa}
+@media(max-width:700px){.grid,.steps,.requirements{grid-template-columns:1fr}.hero{padding-top:70px}.top{height:64px}.wrap{width:min(100% - 28px,1040px)}}
 </style>
 </head>
 <body>
-<div id="ambient" aria-hidden="true"><div class="blob one"></div><div class="blob two"></div><div class="blob three"></div></div>
-<div class="app">
-<aside>
-  <div class="brand"><div class="mark"></div><div><b>KAPTIA</b><small>LOCAL LANGUAGE SYSTEM</small></div></div>
-  <div class="sidebar-chat-tools"><button class="sidebar-new-chat" id="desktopNewChat" type="button">＋　新增對話</button><div class="navlabel">工作區</div><nav class="nav"><button class="active" data-view="chat">◌　對話</button><button data-view="machine">▦　電腦配置</button><button data-view="repo">⌘　專案來源</button></nav></div>
-  <div class="desktop-history"><div class="navlabel">最近對話</div><div id="desktopHistoryList" class="history-list"><p class="history-empty">尚無已儲存的對話</p></div></div>
-  <div class="sidebottom"><div class="mini"><span>執行方式</span><strong>Browser Workspace</strong></div><div class="mini"><span>語言引擎</span><strong id="engineSide">尚未連接本機引擎</strong></div></div>
-</aside>
+<div class="wrap">
+<header class="top"><div class="brand">K A P T I A</div><span class="tag">WINDOWS · LOCAL AI</span></header>
 <main>
-  <header class="top app-top">
-    <button class="mobile-icon" id="historyOpen" type="button" aria-label="開啟聊天紀錄" title="聊天紀錄">☰</button>
-    <div class="top-brand"><div class="eyebrow">KAPTIA</div><div class="top-subtitle">個人 AI 助理</div></div>
-    <div class="top-actions"><div class="status"><span class="dot"></span><span id="statusText">介面就緒 · 引擎未連接</span></div><button class="mobile-icon" id="newChatBtn" type="button" aria-label="新增對話" title="新增對話">＋</button></div>
-  </header>
-  <nav class="mobile-nav" aria-label="主要導覽"><button class="active" data-view="chat" type="button"><span>◌</span><span>對話</span></button><button data-view="machine" type="button"><span>▦</span><span>裝置</span></button><button data-view="repo" type="button"><span>⌘</span><span>專案</span></button></nav>
-  <div class="drawer-scrim" id="drawerScrim" hidden></div>
-  <aside class="history-drawer" id="historyDrawer" aria-label="聊天紀錄" aria-hidden="true">
-    <div class="drawer-head"><strong>聊天紀錄</strong><button class="mobile-icon" id="historyClose" type="button" aria-label="關閉聊天紀錄">✕</button></div>
-    <button class="drawer-new" id="drawerNewChat" type="button">＋　新增對話</button>
-    <div id="historyList" class="history-list"><p class="history-empty">尚無已儲存的對話</p></div>
-    <div class="drawer-footer"><button id="openSettings" type="button">⚙　模型與設定</button><button data-view="machine" type="button">▦　裝置配置</button><button data-view="repo" type="button">⌘　專案來源</button></div>
-  </aside>
-  <section class="content" id="chatView">
-    <div class="hero" id="emptyHero"><div class="core-wrap"><div class="core"></div><div class="thinking-orbit"></div></div><h1>今天想完成什麼？</h1><p class="subtitle">直接輸入問題，或從下面選一個開始。</p>
-      <div class="suggestion-grid"><button class="suggestion" type="button" data-prompt="幫我整理一份清楚的工作計畫">整理工作計畫<span>↗</span></button><button class="suggestion" type="button" data-prompt="用簡單的方式解釋一個複雜概念">解釋複雜概念<span>↗</span></button><button class="suggestion" type="button" data-prompt="幫我改善這段程式碼，並說明原因">改善程式碼<span>↗</span></button><button class="suggestion" type="button" data-prompt="幫我摘要以下內容，列出重點">整理摘要<span>↗</span></button></div>
-    </div>
-    <div id="conversation" class="conversation" aria-live="polite"></div>
-    <div class="model-panel" style="margin:0 0 12px;padding:14px;border:1px solid #292929;border-radius:14px;background:#101010"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong style="font-size:12px;font-weight:500">Kaptia 本機語言模型</strong><div id="modelStatus" style="color:#888;font-size:11px;margin-top:4px">首次使用需下載模型；不會在未經你點擊前自動下載。</div></div><button class="ghost" id="modelBtn" type="button" style="border-color:#444;white-space:nowrap">下載／載入模型</button></div><progress id="modelProgress" max="100" value="0" style="width:100%;height:5px;margin-top:12px;display:none;accent-color:#eee"></progress><div id="modelProgressText" style="font-size:11px;color:#777;margin-top:5px" aria-live="polite"></div></div>
-    <form id="chatForm" class="prompt"><textarea id="prompt" rows="1" placeholder="先載入 Kaptia 本機模型，再輸入訊息…"></textarea><button class="send" id="sendBtn" type="submit" disabled>送出 ↑</button></form>
-    <div class="hint">首次下載 Kaptia 模型約數百 MB；建議使用 Wi-Fi。模型下載後會由瀏覽器快取重用，瀏覽器仍可能因儲存空間限制清除快取。Enter 送出 · Shift + Enter 換行</div>
-    <div class="result" id="result"><div class="who" id="resultWho">KAPTIA</div><div id="resultText"></div></div>
-    <div class="grid">
-      <div class="card"><h3>電腦配置</h3><p>只讀取瀏覽器允許提供的基本資訊</p><div class="value" id="machineSummary">尚未掃描</div></div>
-      <div class="card"><h3>專案來源</h3><p>讀取公開 GitHub 專案狀態</p><div class="value" id="repoSummary">尚未同步</div></div>
-      <div class="card"><h3>執行狀態</h3><p>不會假裝模型已啟動</p><div class="value" id="runtimeSummary">等待本機引擎</div></div>
-    </div>
-    <div class="notice">這是可安裝的網頁工作台。瀏覽器無法直接讀取整台電腦的完整硬體、檔案或執行程序；完整效能偵測需要你另外安裝並明確啟動本機代理程式。</div>
-  </section>
-  <section class="settings-sheet" id="settingsSheet" hidden aria-label="模型與設定">
-    <div class="settings-head"><strong>模型與設定</strong><button class="mobile-icon" id="settingsClose" type="button" aria-label="關閉設定">✕</button></div>
-    <p class="subtitle">目前使用 Kaptia 本機語言模型。首次載入會下載模型檔案；下載失敗時，聊天仍可使用介面與已儲存的對話。</p>
-    <div class="model-panel" style="margin:0;padding:14px;border:1px solid #292929;border-radius:14px;background:#101010"><strong>Kaptia 本機語言模型</strong><div id="settingsModelStatus" style="color:#888;font-size:12px;margin-top:6px">尚未載入</div><button class="send" id="settingsModelBtn" type="button" style="margin-top:12px">載入／重試模型</button></div>
-    <div class="notice">模型載入需要網路、儲存空間與足夠記憶體。這個頁面目前尚未連接遠端 AI API。</div>
-  </section>
-  <section class="content" id="machineView" hidden>
-    <div class="eyebrow">LOCAL DEVICE / PERMISSION-BASED</div><h1 style="margin-top:12px">電腦配置</h1><p class="subtitle">點擊掃描，只讀取瀏覽器允許的資訊；不會讀取文件、程序清單或個人檔案。</p>
-    <button class="send" id="scanBtn" type="button">掃描可用配置</button>
-    <div class="grid" id="machineGrid">
-      <div class="card"><h3>處理器執行緒</h3><div class="value" id="cpuValue">未檢查</div></div>
-      <div class="card"><h3>記憶體提示</h3><div class="value" id="ramValue">瀏覽器可能不提供</div></div>
-      <div class="card"><h3>圖形加速</h3><div class="value" id="gpuValue">未檢查</div></div>
-      <div class="card"><h3>螢幕</h3><div class="value" id="screenValue">未檢查</div></div>
-      <div class="card"><h3>網路狀態</h3><div class="value" id="netValue">未檢查</div></div>
-      <div class="card"><h3>建議模式</h3><div class="value" id="profileValue">尚未分析</div></div>
-    </div>
-    <div class="notice" id="scanNotice">掃描只做前端可取得的粗略判斷，不會更改系統設定，也不會自動超頻或調整電源模式。</div>
-  </section>
-  <section class="content" id="repoView" hidden>
-    <div class="eyebrow">SOURCE / GITHUB</div><h1 style="margin-top:12px">專案來源</h1><p class="subtitle">從公開 GitHub 倉庫讀取版本資訊與 README；不會執行遠端程式碼。</p>
-    <div class="card"><h3>Repository</h3><div class="value"><a style="color:#fff" href="https://github.com/argusocean-wq/kaptia" target="_blank" rel="noreferrer">argusocean-wq/kaptia ↗</a></div><p id="repoDetail" style="margin-top:12px">尚未讀取</p><button class="ghost" id="syncBtn" style="margin-top:10px;border-color:#333">重新同步 GitHub 資訊</button></div>
-  </section>
-</main>
+<section class="hero" style="border:0">
+<div class="orb" aria-hidden="true"></div>
+<div class="eyebrow">YOUR COMPUTER. YOUR WORKSPACE.</div>
+<h1>AI 在本機執行。</h1>
+<p class="lead">Kaptia 是面向 Windows 的本機文字 AI 助理。從這個網站了解產品並下載啟動器；模型下載完成後，對話由你的電腦執行，而不是在這個網頁裡聊天。</p>
+<div class="actions">
+<a class="btn" href="https://github.com/argusocean-wq/kaptia/releases/latest/download/Kaptia-Setup.exe" id="download">下載 Windows 版 (.exe) ↓</a>
+<a class="btn secondary" href="https://github.com/argusocean-wq/kaptia" target="_blank" rel="noopener">查看 GitHub 專案 ↗</a>
 </div>
-<script>
-const $=id=>document.getElementById(id);
-const showResult=(who,text)=>{$('resultWho').textContent=who;$('resultText').textContent=text;$('result').classList.add('visible')};
-function updateDeviceLabels(){const mobile=matchMedia('(max-width: 760px)').matches||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);const h=$('machineView').querySelector('h1');if(h)h.textContent=mobile?'手機配置':'電腦配置';const sub=$('machineView').querySelector('.subtitle');if(sub)sub.textContent=mobile?'查看手機瀏覽器可提供的效能與連線資訊；數值受 iOS／Android 隱私限制，並非完整硬體規格。':'點擊掃描，只讀取瀏覽器允許的資訊；不會讀取文件、程序清單或個人檔案。'}
-updateDeviceLabels();window.addEventListener('resize',updateDeviceLabels);
-document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===btn.dataset.view));['chat','machine','repo'].forEach(v=>$(v+'View').hidden=v!==btn.dataset.view);if(typeof closeDrawer==='function')closeDrawer();window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}));
-let qwenPipe=null,qwenLoading=false;
-const QWEN_MODEL='onnx-community/Qwen2.5-0.5B-Instruct';
-const QWEN_REVISION='516c8d0';
-function modelStatus(text){$('modelStatus').textContent=text;const settings=$('settingsModelStatus');if(settings)settings.textContent=text;}
-async function loadQwen(){
-  if(qwenPipe)return qwenPipe;
-  if(qwenLoading)return null;
-  qwenLoading=true;$('modelBtn').disabled=true;$('modelProgress').style.display='block';$('modelProgress').value=0;$('modelProgressText').textContent='正在準備模型…';modelStatus('正在載入模型檔案；首次使用需要網路與儲存空間。');$('statusText').textContent='正在載入 Kaptia';
-  try{
-    const isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-    if(isIOS){
-      modelStatus('iPhone／iPad 模式：使用單執行緒載入，請保持 Safari 在前景並避免鎖定螢幕。');
-      $('modelProgressText').textContent='首次使用需下載約 786 MB 的 Kaptia 模型檔案，並預留推理記憶體。';
-      if(navigator.storage&&navigator.storage.estimate){
-        try{
-          const estimate=await navigator.storage.estimate();
-          const free=typeof estimate.quota==='number'&&typeof estimate.usage==='number'?estimate.quota-estimate.usage:null;
-          if(free!==null&&free<900*1024*1024){
-            modelStatus('瀏覽器可用儲存空間可能不足。請先釋出裝置空間，再重試。');
-          }
-        }catch(_){}
-      }
-    }
-    const {pipeline,env}=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
-    env.useBrowserCache=true;
-    // Keep the library's bundled ONNX Runtime WASM asset resolution.
-    // Overriding wasmPaths with the Transformers package directory can point to the wrong files on mobile Safari.
-    if(env.backends&&env.backends.onnx&&env.backends.onnx.wasm){
-      env.backends.onnx.wasm.numThreads=1;
-      env.backends.onnx.wasm.proxy=false;
-    }
-    qwenPipe=await pipeline('text-generation',QWEN_MODEL,{
-      revision:QWEN_REVISION,
-      dtype:'q4',
-      device:'wasm',
-      progress_callback:(p)=>{
-        if(p && typeof p.progress==='number'){
-          const n=Math.max(0,Math.min(100,p.progress));$('modelProgress').value=n;
-          $('modelProgressText').textContent='Kaptia 模型檔案 · '+Math.round(n)+'%';
-        }else if(p&&p.status==='ready'){$('modelProgressText').textContent='模型檔案已準備完成';}
-        else if(p&&p.status){$('modelProgressText').textContent=p.status+(p.file?' · '+p.file:'');}
-      }
-    });
-    localStorage.setItem('kaptia-local-model-ready-v1','1');
-    $('sendBtn').disabled=false;$('prompt').placeholder='傳送訊息給 Kaptia…';$('modelBtn').textContent='重新載入模型';modelStatus('模型已載入；後續開啟會嘗試重用瀏覽器快取。');$('modelBtn').setAttribute('aria-label','重新載入 Kaptia 本機模型');$('modelProgress').value=100;$('modelProgressText').textContent='載入完成';$('statusText').textContent='Kaptia 本機模型就緒';$('engineSide').textContent='Kaptia 本機模型已載入';$('runtimeSummary').textContent='Kaptia 本機模型就緒';
-    return qwenPipe;
-  }catch(err){
-    qwenPipe=null;
-    const message=err&&err.message?err.message:String(err);
-    modelStatus('載入失敗：'+message);
-    $('modelBtn').textContent='重試載入模型';
-    $('modelProgressText').textContent=/quota|storage|space|memory|alloc|wasm|fetch|network|load/i.test(message)
-      ?'手機排錯：使用最新 iOS 與 Safari、保持頁面開啟、切換穩定 Wi-Fi、確認可用儲存空間後再試。模型約 786 MB；若 Safari 仍終止頁面，可能是裝置記憶體限制。'
-      :'請截取這行錯誤訊息回報，方便確認是下載、快取或推理引擎問題。';
-    $('statusText').textContent='模型載入失敗';return null;
-  }finally{qwenLoading=false;$('modelBtn').disabled=false;}
-}
-$('modelBtn').addEventListener('click',async()=>{await loadQwen();$('settingsModelStatus').textContent=$('modelStatus').textContent;});
-const HISTORY_KEY='kaptia-chat-history-v1';
-let chats=[];let activeChatId=null;let generating=false;let lastUserPrompt='';
-try{const saved=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');if(Array.isArray(saved))chats=saved;}catch(_){}
-function persistChats(){try{localStorage.setItem(HISTORY_KEY,JSON.stringify(chats.slice(0,40)));}catch(_){setStatus('本機儲存空間不足；目前對話未能完整保存。');}}
-function setStatus(text){$('statusText').textContent=text;}
-function activeChat(){return chats.find(x=>x.id===activeChatId)||null;}
-function makeChat(){const chat={id:String(Date.now())+'-'+Math.random().toString(36).slice(2,8),title:'新對話',updated:Date.now(),messages:[]};chats.unshift(chat);activeChatId=chat.id;persistChats();renderChat();renderHistory();return chat;}
-function ensureChat(){return activeChat()||makeChat();}
-function renderHistory(){const roots=[$('historyList'),$('desktopHistoryList')].filter(Boolean);roots.forEach(root=>{root.replaceChildren();if(!chats.length){const p=document.createElement('p');p.className='history-empty';p.textContent='尚無已儲存的對話';root.append(p);return;}chats.slice().sort((a,b)=>b.updated-a.updated).forEach(chat=>{const row=document.createElement('div');row.className='history-row'+(chat.id===activeChatId?' active':'');const open=document.createElement('button');open.type='button';open.className='history-open';open.textContent=chat.title||'新對話';open.addEventListener('click',()=>{activeChatId=chat.id;renderChat();renderHistory();closeDrawer();});const del=document.createElement('button');del.type='button';del.className='history-delete';del.textContent='⋯';del.setAttribute('aria-label','對話選項');del.addEventListener('click',()=>{if(confirm('要刪除此對話嗎？')){chats=chats.filter(x=>x.id!==chat.id);if(activeChatId===chat.id)activeChatId=chats[0]?.id||null;persistChats();renderChat();renderHistory();}});row.append(open,del);root.append(row);});});}
-function renderChat(){const chat=activeChat();const root=$('conversation');root.replaceChildren();$('emptyHero').hidden=!!(chat&&chat.messages.length);$('result').classList.remove('visible');if(!chat||!chat.messages.length){return;}chat.messages.forEach((msg,index)=>{const item=document.createElement('article');item.className='message '+(msg.role==='user'?'user-message':'assistant-message');const body=document.createElement('div');body.className='message-body';body.textContent=msg.content;item.append(body);if(msg.role==='assistant'){const actions=document.createElement('div');actions.className='message-actions';const copy=document.createElement('button');copy.type='button';copy.textContent='複製';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(msg.content);copy.textContent='已複製';setTimeout(()=>copy.textContent='複製',1200);}catch(_){copy.textContent='無法複製';}});actions.append(copy);if(index===chat.messages.length-1){const retry=document.createElement('button');retry.type='button';retry.textContent='重新生成';retry.addEventListener('click',()=>regenerateLast());actions.append(retry);}item.append(actions);}root.append(item);});if(!window.userScrolledConversation)window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});}
-function openDrawer(){$('historyDrawer').classList.add('open');$('drawerScrim').hidden=false;$('historyDrawer').setAttribute('aria-hidden','false');}
-function closeDrawer(){$('historyDrawer').classList.remove('open');$('drawerScrim').hidden=true;$('historyDrawer').setAttribute('aria-hidden','true');}
-function addMessage(role,content){const chat=ensureChat();chat.messages.push({role,content,at:Date.now()});chat.updated=Date.now();if(role==='user'&&chat.title==='新對話')chat.title=content.slice(0,42);persistChats();renderChat();renderHistory();return chat;}
-async function runPrompt(value,{appendUser=true}={}){if(generating)return;if(!qwenPipe){showResult('KAPTIA','目前沒有可用的 AI 推理引擎。請開啟「模型與設定」嘗試載入本機模型；遠端 AI 連線尚未設定。你的訊息已保留在輸入框。');return;}if(appendUser)addMessage('user',value);lastUserPrompt=value;generating=true;document.body.classList.add('thinking');setStatus('正在生成回答…');$('sendBtn').disabled=true;$('sendBtn').textContent='…';const chat=ensureChat();const placeholder={role:'assistant',content:'正在思考…',at:Date.now()};chat.messages.push(placeholder);renderChat();try{const mobile=window.matchMedia('(max-width: 760px)').matches;const systemPrompt={role:'system',content:'你是 Kaptia，預設以臺灣使用者的繁體中文回答。重要地名與政治實體必須精確區分：中華民國（Republic of China，通常在臺灣語境稱臺灣）與中華人民共和國（People\'s Republic of China）是不同的政治實體，絕不可互相替代。使用者詢問「中華民國憲法」時，必須回答中華民國的憲法，不可改成中華人民共和國憲法，也不可把前者錯稱為後者。不要因為法律文本而虛構版權禁令；若能可靠回答，就直接協助，若無法確保條文逐字正確，應坦白說明並提供中華民國總統府或全國法規資料庫等官方查證方向。不要只根據模型來源國推斷答案立場。對國籍、政府、法域、歷史名稱及法律文本，先確認使用者明確指涉的對象；若有歧義再詢問。回答事實時區分已知、推論與未查證內容。'};const context=[systemPrompt,...chat.messages.filter(m=>m!==placeholder).slice(-12).map(m=>({role:m.role,content:m.content}))];const out=await qwenPipe(context,{max_new_tokens:mobile?96:160,do_sample:true,temperature:0.7});const generated=out&&out[0]?out[0].generated_text:null;const answer=Array.isArray(generated)?(generated.slice().reverse().find(m=>m&&m.role==='assistant')||generated[generated.length-1]||{}).content:String(generated||'模型沒有回傳文字。');placeholder.content=answer||'模型沒有回傳文字。';}catch(err){placeholder.content='生成失敗：'+(err&&err.message?err.message:String(err))+'。你可以點擊「重新生成」再試一次。';}finally{generating=false;chat.updated=Date.now();persistChats();renderChat();renderHistory();document.body.classList.remove('thinking');setStatus(qwenPipe?'本機模型就緒':'模型未連線');$('sendBtn').disabled=false;$('sendBtn').textContent='↑';}}
-function regenerateLast(){const chat=activeChat();if(!chat)return;const last=chat.messages.filter(m=>m.role==='user').at(-1);if(!last)return;const prior=chat.messages.at(-1);if(prior&&prior.role==='assistant')chat.messages.pop();persistChats();renderChat();runPrompt(last.content,{appendUser:false});}
-$('chatForm').addEventListener('submit',async e=>{e.preventDefault();const value=$('prompt').value.trim();if(!value||generating)return;if(qwenPipe){$('prompt').value='';resizePrompt();await runPrompt(value);}else{showResult('KAPTIA','模型尚未連線。請開啟「模型與設定」載入本機模型。你的訊息仍保留在輸入框，沒有送往任何外部服務。');}});
-$('historyOpen').addEventListener('click',openDrawer);$('historyClose').addEventListener('click',closeDrawer);$('drawerScrim').addEventListener('click',closeDrawer);
-$('newChatBtn').addEventListener('click',()=>{activeChatId=null;makeChat();$('prompt').focus();});
-$('desktopNewChat').addEventListener('click',()=>{activeChatId=null;makeChat();$('prompt').focus();});
-$('drawerNewChat').addEventListener('click',()=>{activeChatId=null;makeChat();closeDrawer();$('prompt').focus();});
-$('openSettings').addEventListener('click',()=>{closeDrawer();$('settingsSheet').hidden=false;});
-$('settingsClose').addEventListener('click',()=>$('settingsSheet').hidden=true);
-$('settingsModelBtn').addEventListener('click',async()=>{await loadQwen();$('settingsModelStatus').textContent=$('modelStatus').textContent;});
-document.querySelectorAll('[data-prompt]').forEach(btn=>btn.addEventListener('click',()=>{$('prompt').value=btn.dataset.prompt;resizePrompt();$('prompt').focus();}));
-const promptBox=$('prompt');
-function resizePrompt(){promptBox.style.height='auto';promptBox.style.height=Math.min(promptBox.scrollHeight,120)+'px';}
-promptBox.addEventListener('input',resizePrompt,{passive:true});
-promptBox.addEventListener('focus',()=>{if(window.matchMedia('(max-width:760px)').matches)setTimeout(()=>promptBox.scrollIntoView({block:'nearest',behavior:'smooth'}),120)});
-renderHistory();if(chats.length){activeChatId=chats[0].id;renderChat();renderHistory();}
-if(localStorage.getItem('kaptia-local-model-ready-v1')==='1'){
-  modelStatus('偵測到 Kaptia 模型曾經載入；正在嘗試從瀏覽器快取載入。若快取被系統清除，可能需要重新下載。');
-  $('modelBtn').textContent='重新載入模型';
-  window.addEventListener('load',()=>loadQwen(),{once:true});
-}
-$('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chatForm').requestSubmit()}});
-function scan(){const mobile=matchMedia('(max-width: 760px)').matches||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);const cores=navigator.hardwareConcurrency||null;const mem=navigator.deviceMemory||null;const gl=document.createElement('canvas').getContext('webgl')||document.createElement('canvas').getContext('experimental-webgl');let gpu='瀏覽器未提供';if(gl){const ext=gl.getExtension('WEBGL_debug_renderer_info');gpu=ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'圖形資訊受瀏覽器保護'}$('machineView').querySelector('h1').textContent=mobile?'手機配置':'電腦配置';$('machineView').querySelector('.subtitle').textContent=mobile?'查看手機瀏覽器可提供的效能與連線資訊；數值受 iOS／Android 隱私限制，並非完整硬體規格。':'查看電腦瀏覽器可提供的效能與連線資訊；不會讀取文件或程序清單。';$('cpuValue').textContent=cores?cores+(mobile?' 個可用執行緒（估計）':' 個邏輯執行緒'):'瀏覽器未提供';$('ramValue').textContent=mem?'約 '+mem+' GB（瀏覽器估計值）':(mobile?'系統未向瀏覽器公開':'瀏覽器未提供');$('gpuValue').textContent=gpu;$('screenValue').textContent=screen.width+' × '+screen.height+' · DPR '+(devicePixelRatio||1);$('netValue').textContent=navigator.onLine?'目前連線中':'目前離線';let profile=mobile?'手機平衡模式':'一般模式';if((mem&&mem<=4)||(cores&&cores<=4))profile=mobile?'手機輕量模式':'輕量模式';else if(mem&&mem>=8&&cores&&cores>=8)profile=mobile?'手機高效能模式':'較高資源模式';$('profileValue').textContent=profile+'（粗略建議）';$('machineSummary').textContent=(cores?cores+' 執行緒':'硬體資訊有限')+' · '+profile;$('scanNotice').textContent=mobile?'手機配置掃描完成。iPhone／iPad 通常不會公開 RAM 與完整 GPU 名稱，因此「未提供」不代表手機沒有該硬體。未更改系統設定。':'掃描完成。這些是瀏覽器可提供的估計資訊，不等於完整硬體診斷；GPU 名稱可能被隱藏，記憶體數字也可能經過取整。沒有修改任何系統設定。'}
-$('scanBtn').addEventListener('click',scan);
-async function syncRepo(){ $('repoSummary').textContent='讀取中…';$('repoDetail').textContent='正在連接 GitHub 公開 API…';try{const r=await fetch('https://api.github.com/repos/argusocean-wq/kaptia',{headers:{'Accept':'application/vnd.github+json'}});if(!r.ok)throw new Error('GitHub API HTTP '+r.status);const d=await r.json();$('repoSummary').textContent='已連線 · '+d.default_branch;$('repoDetail').textContent='預設分支：'+d.default_branch+' · 最近更新：'+(d.updated_at?new Date(d.updated_at).toLocaleString():'未知')+' · 公開專案。此頁只讀取專案中繼資料，不會在瀏覽器內安裝或執行 GitHub 程式碼。'}catch(e){$('repoSummary').textContent='同步失敗';$('repoDetail').textContent='無法取得 GitHub 資訊：'+e.message+'。請檢查網路或稍後重試。'}}
-$('syncBtn').addEventListener('click',syncRepo);syncRepo();
-if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-if(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent))document.documentElement.classList.add('touch-device');
-</script>
+<p class="note" id="downloadNote">Windows 10/11 · 初次設定需要網路與大量下載空間。下載連結會在 Windows 安裝程式發布後生效。</p>
+</section>
+<section>
+<div class="eyebrow">OVERVIEW</div><h2>網站只負責介紹與下載</h2>
+<div class="grid">
+<article class="card"><div class="num">01 / WEBSITE</div><h3>產品介紹</h3><p>瀏覽器只顯示功能、需求與安裝說明，不在 Edge 網頁內載入大型模型或提供聊天工作台。</p></article>
+<article class="card"><div class="num">02 / INSTALLER</div><h3>下載桌面啟動器</h3><p>按下載取得 Windows 執行檔。啟動器負責準備本機執行環境、取得模型檔案並顯示安裝狀態。</p></article>
+<article class="card"><div class="num">03 / LOCAL</div><h3>在電腦上執行</h3><p>模型完成下載後，從本機啟動 Kaptia。推論使用電腦的 CPU 或相容 GPU；效能依硬體而異。</p></article>
+</div>
+</section>
+<section>
+<div class="eyebrow">GET STARTED</div><h2>從下載到本機對話</h2>
+<div class="steps">
+<div class="step"><div class="num">STEP 01</div><strong>下載 .exe</strong><p class="copy">從 GitHub Releases 取得 Windows 啟動器。請只執行你信任且已核對來源的版本。</p></div>
+<div class="step"><div class="num">STEP 02</div><strong>下載模型與依賴</strong><p class="copy">首次啟動需要網路、磁碟空間與等待時間。模型檔案會保存於本機供後續載入。</p></div>
+<div class="step"><div class="num">STEP 03</div><strong>啟動本機模型</strong><p class="copy">完成設定後，從桌面啟動 Kaptia。之後是否能完全離線，取決於模型與必要依賴是否已完整下載。</p></div>
+</div>
+</section>
+<section>
+<div class="eyebrow">SYSTEM REQUIREMENTS</div><h2>開始前請確認</h2>
+<div class="requirements">
+<div class="req"><strong>作業系統</strong><p class="copy">Windows 10 或 Windows 11（64 位元）。目前此安裝流程不是 iPhone/iPad 安裝程式。</p></div>
+<div class="req"><strong>網路與儲存空間</strong><p class="copy">首次設定需下載 Python 套件與大型語言模型。請預留數 GB 以上空間；實際需求依模型版本而定。</p></div>
+<div class="req"><strong>硬體</strong><p class="copy">可使用 CPU 執行但可能較慢；相容的 NVIDIA GPU 可改善部分工作負載的速度與記憶體配置。</p></div>
+<div class="req"><strong>隱私與限制</strong><p class="copy">本機推論不等於所有安裝步驟都離線。下載來源、模型授權、遙測與外部連線狀態應以實際發布版本說明為準。</p></div>
+</div>
+</section>
+</main>
+<footer class="footer"><span>© Kaptia · Windows local assistant</span><span><a href="https://github.com/argusocean-wq/kaptia">Source code</a> · <a href="https://github.com/argusocean-wq/kaptia/releases">Releases</a></span></footer>
+</div>
 </body></html>
-<!-- Kaptia Pages redeploy trigger: remove stale deployment after custom-domain cleanup. -->
