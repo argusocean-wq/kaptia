@@ -24,6 +24,11 @@ MUTED = "#B8B8B8"
 ACCENT = "#FFFFFF"
 BORDER = "#3A3A3A"
 
+try:
+    from build_info import BUILD_NUMBER, BUILD_TAG
+except ImportError:
+    BUILD_NUMBER, BUILD_TAG = 0, "development"
+
 
 class Installer(tk.Tk):
     def __init__(self):
@@ -233,6 +238,37 @@ class Installer(tk.Tk):
                            f"Extension package: {vsix_path}. Use Cursor/VS Code Extensions > Install from VSIX. " + " | ".join(failures),
                            "EDITOR", 100, False)
 
+    def _write_version_metadata(self):
+        import json
+        ROOT.mkdir(parents=True, exist_ok=True)
+        data = {"product": "Kaptia", "version": BUILD_TAG, "build_number": BUILD_NUMBER}
+        target = ROOT / "version.json"
+        temp = target.with_suffix(".tmp")
+        temp.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        temp.replace(target)
+
+    def _register_update_tasks(self, venv_python, app_dir):
+        updater = app_dir / "scripts" / "kaptia_update.py"
+        if not updater.is_file():
+            return
+        command = f'"{venv_python}" "{updater}" --check'
+        tasks = [
+            ["schtasks.exe", "/Create", "/SC", "ONLOGON", "/TN", "Kaptia Update Check (Logon)", "/TR", command, "/F", "/RL", "LIMITED", "/IT"],
+            ["schtasks.exe", "/Create", "/SC", "HOURLY", "/MO", "6", "/TN", "Kaptia Update Check (6 Hours)", "/TR", command, "/F", "/RL", "LIMITED", "/IT"],
+        ]
+        failures = []
+        for args in tasks:
+            try:
+                result = subprocess.run(args, capture_output=True, text=True, timeout=20)
+                if result.returncode != 0:
+                    failures.append((result.stderr or result.stdout or "Task Scheduler rejected task").strip()[-200:])
+            except Exception as exc:
+                failures.append(f"{type(exc).__name__}: {exc}")
+        if failures:
+            self.update_ui("Kaptia installed", "Automatic update scheduling needs attention. You can run scripts\\kaptia_update.py manually. " + " | ".join(failures), "UPDATE", 100, False)
+        else:
+            self.update_ui("Automatic updates enabled", "Kaptia checks GitHub at sign-in and every 6 hours. New installers are SHA-256 verified and require your confirmation.", "UPDATE", 100, False)
+
     def install(self):
         try:
             ROOT.mkdir(parents=True, exist_ok=True)
@@ -356,6 +392,8 @@ class Installer(tk.Tk):
                                "TRAINING", 100, True)
             subprocess.run(train_command, check=True, cwd=app_dir)
 
+            self._write_version_metadata()
+            self._register_update_tasks(venv_python, app_dir)
             self._install_vscode_extension(app_dir)
             self.update_ui("Launching Kaptia…",
                            "Loading Kaptia's own scratch-trained checkpoint. No finished model weights are used.",
