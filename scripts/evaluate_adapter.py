@@ -110,7 +110,7 @@ def main():
                 "kaptia_adapter_answer": adapter_answer,
                 "human_review": {"base_score": None, "adapter_score": None, "notes": ""},
             }
-            out.write(json.dumps(record, ensure_ascii=False) + "\\n")
+            out.write(json.dumps(record, ensure_ascii=False) + "\n")
             print(f"[{index}/{len(rows)}] captured; manually review both answers")
     del adapter_model, adapter_base
     if torch.cuda.is_available():
