@@ -115,7 +115,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: outputs/kaptia-scratch-pretrain
-          key: kaptia-scratch-${{ github.ref_name }}-${{ github.run_id }}
+          key: kaptia-base-v2-${{ github.ref_name }}-${{ github.run_id }}
       - name: Upload checkpoint, manifest, logs, and corpus metadata
         uses: actions/upload-artifact@v4
         with:
