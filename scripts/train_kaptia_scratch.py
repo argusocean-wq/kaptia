@@ -63,6 +63,7 @@ def main() -> None:
     parser.add_argument("--width", type=int, default=384)
     parser.add_argument("--context-length", type=int, default=512)
     parser.add_argument("--device", choices=("auto", "cpu", "cuda"), default="auto")
+    parser.add_argument("--resume", type=Path, default=None, help="Resume a random-init Kaptia checkpoint; pretrained checkpoints are rejected.")
     args = parser.parse_args()
     if min(args.steps, args.eval_interval, args.eval_batches, args.batch_size, args.block_size) < 1:
         parser.error("steps, eval-interval, eval-batches, batch-size, and block-size must be positive")
@@ -85,7 +86,24 @@ def main() -> None:
     model = KaptiaScratchLM(config).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    start_step = 0
     best_val = float("inf")
+    if args.resume is not None:
+        if not args.resume.is_file():
+            parser.error(f"--resume checkpoint does not exist: {args.resume}")
+        checkpoint = torch.load(args.resume, map_location=device, weights_only=False)
+        if checkpoint.get("initialization") != "random" or checkpoint.get("pretrained_source") is not None:
+            parser.error("Refusing checkpoint: expected random initialization and no pretrained source.")
+        saved_config = checkpoint.get("config", {})
+        if any(saved_config.get(key) != value for key, value in config.__dict__.items()):
+            parser.error("Checkpoint architecture config does not match requested model config.")
+        model.load_state_dict(checkpoint["model_state_dict"], strict=True)
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        start_step = int(checkpoint.get("step", 0))
+        best_val = float(checkpoint.get("best_validation_loss", checkpoint.get("metrics", {}).get("validation", {}).get("loss", float("inf"))))
+        if start_step < 0:
+            parser.error("Checkpoint has an invalid negative step.")
+        print(f"[INFO] Resuming random-init training at step {start_step}; no pretrained weights loaded.")
     log_path = args.output_dir / "training_log.jsonl"
     started = time.time()
     print(f"[INFO] Device: {device}; parameters: {sum(p.numel() for p in model.parameters()):,}")
@@ -93,7 +111,7 @@ def main() -> None:
     print("[INFO] Model starts with random weights; no pretrained checkpoint is loaded.")
 
     with log_path.open("a", encoding="utf-8") as log:
-        for step in range(1, args.steps + 1):
+        for step in range(start_step + 1, start_step + args.steps + 1):
             x = sample_batch(train_data, args.batch_size, args.block_size, device)
             result = model(x, labels=x)
             loss = result["loss"]
@@ -104,7 +122,7 @@ def main() -> None:
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
 
-            if step == 1 or step % args.eval_interval == 0 or step == args.steps:
+            if step == 1 or step % args.eval_interval == 0 or step == start_step + args.steps:
                 metrics = estimate_loss(model, train_data, val_data, args.batch_size, args.block_size, device, args.eval_batches)
                 record = {"step": step, "elapsed_seconds": round(time.time() - started, 2), **metrics}
                 log.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -115,6 +133,7 @@ def main() -> None:
                     "model_state_dict": model.state_dict(),
                     "optimizer_state_dict": optimizer.state_dict(),
                     "step": step,
+                    "best_validation_loss": best_val,
                     "metrics": metrics,
                     "seed": args.seed,
                     "pretrained_source": None,
@@ -126,17 +145,18 @@ def main() -> None:
                     best_val = metrics["validation"]["loss"]
                     torch.save(checkpoint, args.output_dir / "best_checkpoint.pt")
                 (args.output_dir / "manifest.json").write_text(json.dumps({
-                    "status": "TRAINING_COMPLETED" if step == args.steps else "TRAINING_IN_PROGRESS",
+                    "status": "TRAINING_COMPLETED" if step == start_step + args.steps else "TRAINING_IN_PROGRESS",
                     "initialization": "random",
                     "pretrained_source": None,
                     "step": step,
-                    "requested_steps": args.steps,
+                    "requested_steps": start_step + args.steps,
+                    "steps_this_run": args.steps,
                     "best_validation_loss": best_val,
                     "device": str(device),
                     "corpus_dir": str(args.data_dir),
                     "log": str(log_path),
                 }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"[DONE] Training finished. Checkpoints/log: {args.output_dir.resolve()}")
+    print(f"[DONE] Training segment finished ({args.steps} additional steps). Checkpoints/log: {args.output_dir.resolve()}")
     print("[NOTE] A small dataset or short run is only a pipeline validation, not evidence of useful general language ability.")
 
 
