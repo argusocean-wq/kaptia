@@ -121,5 +121,27 @@ class RagIndexPointerTests(unittest.TestCase):
             self.assertEqual(pointer.read_text(encoding="ascii").strip(), "index-" + "b" * 32)
 
 
+class HybridRetrievalTests(unittest.TestCase):
+    def test_lexical_tokens_cover_latin_and_chinese_ngrams(self):
+        tokens = tools._lexical_tokens("RAG 向量檢索")
+        self.assertIn("rag", tokens)
+        self.assertIn("向量", tokens)
+        self.assertIn("檢索", tokens)
+
+    def test_hybrid_rank_can_promote_exact_lexical_match(self):
+        docs = [
+            {"text": "一般向量資料庫介紹", "source": "a.md", "chunk": 0},
+            {"text": "RAG 向量檢索錯誤修復步驟", "source": "b.md", "chunk": 0},
+        ]
+        # Vector-only order prefers doc 0, while lexical evidence strongly matches doc 1.
+        ranked = tools._hybrid_rank("RAG 向量檢索錯誤修復", docs, [0.95, 0.70], 2)
+        self.assertEqual(ranked[0][0], 1)
+
+    def test_hybrid_rank_respects_top_k(self):
+        docs = [{"text": f"資料 {i}", "source": "x.md", "chunk": i} for i in range(6)]
+        ranked = tools._hybrid_rank("資料", docs, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6], 3)
+        self.assertEqual(len(ranked), 3)
+
+
 if __name__ == "__main__":
     unittest.main()
