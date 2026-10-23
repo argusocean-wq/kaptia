@@ -110,6 +110,8 @@ def _write_section(generate, user_text, plan, title, previous_summary="", tool_c
 格式技能指南：
 {guide}
 前段摘要（維持一致性）：{previous_summary or "目前沒有前段內容"}
+本機工具結果（不可把詞彙匹配分數當成正確率）：
+{tool_context or "本次未取得額外工具結果"}
 全程檢查：
 {checks}
 
