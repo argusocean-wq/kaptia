@@ -126,12 +126,19 @@ def _write_section(generate, user_text, plan, title, previous_summary="", tool_c
 {checks}
 
 只撰寫本段，具體且避免重複。若需要外部查證，不可假裝查過；明確標示待查證項目。"""
-    return generate(
-        [{"role": "system", "content": WRITER_RULES},
-         {"role": "user", "content": prompt}],
+    messages = [{"role": "system", "content": WRITER_RULES},
+                {"role": "user", "content": prompt}]
+    try:
+        from kaptia_reasoning import generate_reasoned
+    except ImportError:
+        from scripts.kaptia_reasoning import generate_reasoned
+    answer, reasoning_meta = generate_reasoned(
+        generate, messages,
         max_new_tokens=1100 if plan["task_size"] == "long" else 700,
         temperature=0.35,
-    ).strip()
+    )
+    # Keep execution mode transparent in workflow events without exposing hidden reasoning.
+    return answer.strip()
 
 def verify_output(generate, user_text, plan, content):
     """Model-based quality gate; reports its limits and never claims external verification."""
