@@ -1,4 +1,4 @@
-"""QLoRA fine-tuning for Kaptia; evaluates on a held-out JSONL set.
+"""QLoRA fine-tuning for Kaptia; evaluates on a held-out JSONL set using a configurable non-Qwen default backend.
 
 This script trains an adapter, not a standalone model. It requires a compatible
 NVIDIA CUDA environment. Assistant completion tokens are the only loss targets.
@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TRAIN_PATHS = [ROOT / "training" / "seed_dataset.jsonl", ROOT / "training" / "code_seed_dataset.jsonl"]
 EVAL_PATHS = [ROOT / "training" / "eval_dataset.jsonl", ROOT / "training" / "code_eval_dataset.jsonl"]
 OUTPUT_DIR = ROOT / "outputs" / "kaptia-language-qlora"
-MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "Qwen/Qwen2.5-Coder-7B-Instruct")
+MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "HuggingFaceTB/SmolLM2-1.7B-Instruct")
 MAX_LENGTH = int(os.environ.get("KAPTIA_MAX_LENGTH", "1024"))
 TRAIN_BATCH_SIZE = int(os.environ.get("KAPTIA_BATCH_SIZE", "1"))
 GRAD_ACCUM_STEPS = int(os.environ.get("KAPTIA_GRAD_ACCUM_STEPS", "8"))
