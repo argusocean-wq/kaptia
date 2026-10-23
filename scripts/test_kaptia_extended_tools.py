@@ -91,7 +91,7 @@ class RagIndexPointerTests(unittest.TestCase):
             index_dir = indexes / index_id
             index_dir.mkdir(parents=True)
             pointer = root / "CURRENT"
-            pointer.write_text(index_id + "\\n", encoding="ascii")
+            pointer.write_text(index_id + "\n", encoding="ascii")
             with patch.object(tools, "VECTOR_DIR", root), \
                  patch.object(tools, "CURRENT_INDEX_FILE", pointer), \
                  patch.object(tools, "INDEXES_DIR", indexes):
@@ -112,7 +112,7 @@ class RagIndexPointerTests(unittest.TestCase):
             root = Path(tmp)
             root.mkdir(exist_ok=True)
             pointer = root / "CURRENT"
-            pointer.write_text("index-" + "b" * 32 + "\\n", encoding="ascii")
+            pointer.write_text("index-" + "b" * 32 + "\n", encoding="ascii")
             with patch.object(tools, "VECTOR_DIR", root), \
                  patch.object(tools, "CURRENT_INDEX_FILE", pointer), \
                  patch("kaptia_extended_tools.os.replace", side_effect=OSError("simulated crash")):
