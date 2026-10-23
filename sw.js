@@ -1,4 +1,4 @@
-const CACHE = "kaptia-pages-v3";
+const CACHE = "kaptia-pages-v4";
 const APP_FILES = ["./", "./index.html", "./manifest.webmanifest"];
 
 self.addEventListener("install", event => {
