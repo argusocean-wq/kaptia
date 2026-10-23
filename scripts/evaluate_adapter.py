@@ -15,7 +15,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 ROOT = Path(__file__).resolve().parents[1]
 EVAL_PATHS = [ROOT / "training" / "eval_dataset.jsonl", ROOT / "training" / "code_eval_dataset.jsonl"]
 ADAPTER_DIR = ROOT / "outputs" / "kaptia-smollm2-qlora" / "adapter"
-OUT_PATH = ROOT / "outputs" / "kaptia-language-qlora" / "comparison.jsonl"
+OUT_PATH = ROOT / "outputs" / "kaptia-smollm2-qlora" / "comparison.jsonl"
 MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "HuggingFaceTB/SmolLM2-1.7B-Instruct")
 MAX_NEW_TOKENS = int(os.environ.get("KAPTIA_EVAL_MAX_NEW_TOKENS", "256"))
 
@@ -49,7 +49,7 @@ def generate(tokenizer, model, instruction, extra_input=""):
     if extra_input.strip():
         user_text += "\n\n補充資料：\n" + extra_input.strip()
     messages = [
-        {"role": "system", "content": "你是 Kaptia，預設使用臺灣繁體中文。你是嚴謹的程式設計與專案助理；先理解需求、明確假設、給出可驗證方案，不捏造測試結果、來源或工具執行。中華民國與中華人民共和國不可混淆。"},
+        {"role": "system", "content": "你是 Kaptia，一個嚴謹的繁體中文助理。依據使用者提供的資訊回答；區分已知、推論與未知，不捏造來源、測試或執行結果。遵守安全、隱私與著作權要求。"},
         {"role": "user", "content": user_text},
     ]
     prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
