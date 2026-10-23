@@ -33,10 +33,10 @@ jobs:
       - name: Publish versioned GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: kaptia-build-${{ github.run_number }}
-          name: Kaptia Windows Installer ${{ github.run_number }}
+          tag_name: kaptia-build-7
+          name: Kaptia Windows Installer 7
           body: |
-            Rolling Windows installer built from the latest main-branch installer source.
+            Rolling Windows installer built from the current installer source.
             The installer downloads the current Kaptia source and prepares the local Python runtime.
             It trains a small Kaptia scratch checkpoint from random initialization using the bundled seed corpus.
             This bootstrap checkpoint is not a general-capability language model.
