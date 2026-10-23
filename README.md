@@ -1,6 +1,6 @@
 # Kaptia
 
-Kaptia 是以繁體中文為預設的本機文字 AI 助理。執行時不依賴 Ollama，也不在產品介面顯示底層模型品牌；目前只接入文字語言能力，不包含影像、語音、外部搜尋或其他模型服務。
+Kaptia 是以繁體中文為預設的本機文字 AI 助理。語言模型必須由 Kaptia 自己從隨機初始化權重開始預訓練；執行時不依賴 Ollama、Hugging Face 成品模型、第三方 Tokenizer 或外部模型服務。
 
 > **目前狀態：已加入分階段工作流程與交付前自我審核程式碼，尚未在目標 Windows 電腦驗收。** 尚未確認模型下載、真實對話、檔案交付或微調能在使用者裝置成功執行。
 
@@ -56,9 +56,9 @@ Kaptia 是完整模型系統的產品名稱。程式預設已移除 Qwen，改�
 - `scripts/test_kaptia_tools.py`：工具權限、記憶與檔案交付回歸測試
 - `skills/format_guides.md`：本機格式技能指南
 - `scripts/setup_train.bat`：訓練環境設定
-- `scripts/train_qlora.py`：QLoRA/LoRA 微調流程
+- `scripts/train_kaptia_scratch.py`：從隨機初始化開始的自回歸文字預訓練
 - `requirements.txt`：推論依賴
-- `requirements-train.txt`：訓練依賴
+
 - `training/seed_dataset.jsonl`：少量示範訓練資料，僅用於管線起步
 - `training/eval_dataset.jsonl`：獨立驗收資料，不應加入訓練集
 - `scripts/validate_training_data.py`：JSONL 欄位、重複項與 train/eval 洩漏檢查
@@ -75,19 +75,20 @@ Kaptia 是完整模型系統的產品名稱。程式預設已移除 Qwen，改�
 1. 安裝 Python 3.10/3.11 與 NVIDIA 顯卡驅動（如要使用 GPU）。
 2. Clone 或下載此儲存庫。
 3. 雙擊 `scripts\\open_kaptia.bat`。
-4. 首次啟動會建立虛擬環境、安裝依賴並下載預設語言模型檔案（HuggingFaceTB/SmolLM2-1.7B-Instruct），請預留足夠磁碟空間。
+4. 首次啟動會建立虛擬環境、安裝 PyTorch，並以內建示範語料從隨機權重訓練 Kaptia 起步模型；不會下載成品模型。
 5. 後續再次雙擊啟動即可。
 
 若使用離線模式，請先完成一次完整模型下載，再設定環境變數 `KAPTIA_LOCAL_ONLY=1`。沒有快取完整模型時，離線載入會明確報錯。
 
-## 微調
+## 從零預訓練
 
-1. 執行 `scripts\\setup_train.bat`，並確認 PyTorch 與 CUDA 版本相容。
-2. 通用訓練資料放在 `training/seed_dataset.jsonl`，多語言程式碼訓練資料放在 `training/code_seed_dataset.jsonl`。資料需具備使用權、經品質審核且去除個資；目前程式碼樣本仍標記為待人工審查。
-3. 先執行 `python scripts\\validate_training_data.py` 與 `python scripts\\validate_code_dataset.py`，檢查資料格式。程式碼驗收集 `training/code_eval_dataset.jsonl` 不會自動加入訓練集。
-4. 在虛擬環境中執行 `python scripts\\train_qlora.py`。流程會使用 assistant 回答 token 作為訓練目標，並在每個 epoch 評估保留集。
-5. 重新訓練 adapter 預設寫入全新的 `outputs/kaptia-smollm2-qlora/adapter`，指標寫入 `outputs/kaptia-smollm2-qlora/metrics.json`，不會覆蓋舊 Qwen adapter。聊天程式只會載入基礎模型相符的 adapter；不相容時明確停止。
-6. 執行 `python scripts\\evaluate_adapter.py`，在獨立驗收題上分別執行 SmolLM2 基礎模型與新 adapter；檢查 `outputs/kaptia-smollm2-qlora/comparison.jsonl` 並人工評分。示範資料量少，不足以證明能力提升。
+1. 將有權使用的原始文字放進獨立資料夾，先清除個資、機密與重複文件。
+2. 執行 `python scripts\\kaptia_prepare_text_corpus.py --input training\\raw_text --output-dir training\\scratch_corpus`。
+3. 執行 `python scripts\\train_kaptia_scratch.py --data-dir training\\scratch_corpus --output-dir outputs\\kaptia-scratch-pretrain --steps 1000 --device auto`。
+4. 若要續訓，使用 `--resume outputs\\kaptia-scratch-pretrain\\latest_checkpoint.pt`；程式會拒絕標記為預訓練來源的 checkpoint。
+5. 先檢查 `training_log.jsonl`、驗證集 loss、checkpoint manifest 和未見過的生成測試，再判斷是否增加資料與模型規模。
+
+Windows 啟動器目前使用內建的少量對話示範語料進行起步訓練；它不是足以訓練通用語言模型的大型語料。要提升語言理解能力，必須擴充合法授權且具多樣性的原始文本，並在可用 GPU 上進行大量訓練。不得把起步訓練稱為完成的通用模型。
 
 雙端設計、iPhone Safari 的模型相容性與未完成項目請見 [`docs/KAPTIA_MODEL_PLAN.md`](docs/KAPTIA_MODEL_PLAN.md)。Windows 訓練成功不代表 PEFT adapter 可直接在 Safari 執行；手機端需另外驗證 ONNX/瀏覽器模型與本機知識檢索。
 
