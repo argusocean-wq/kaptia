@@ -141,6 +141,75 @@ class Installer(tk.Tk):
                        "CONNECTING", 0, True)
         threading.Thread(target=self.install, daemon=True).start()
 
+    def _install_vscode_extension(self, app_dir):
+        extension_dir = app_dir / "vscode-extension"
+        required = ["package.json", "extension.js", "README.md"]
+        if not all((extension_dir / name).is_file() for name in required):
+            self.update_ui("Kaptia installed", "Editor extension source is missing; the desktop assistant can still run.", "EDITOR", 100, False)
+            return
+
+        manifest = """<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
+  <Metadata>
+    <Identity Language="en-US" Id="kaptia-ask-context" Version="0.1.0" Publisher="kaptia-local" />
+    <DisplayName>Kaptia: Ask About Selected Code</DisplayName>
+    <Description>Ask the local Kaptia scratch model to explain selected code.</Description>
+    <Tags>AI,code,local,context</Tags>
+    <Categories>Other</Categories>
+    <Properties>
+      <Property Id="Microsoft.VisualStudio.Code.Engine" Value="^1.80.0" />
+      <Property Id="Microsoft.VisualStudio.Code.ExtensionManifest" Value="extension/package.json" />
+      <Property Id="Microsoft.VisualStudio.Code.LocalizedLanguages" Value="en-US" />
+    </Properties>
+  </Metadata>
+  <Installation>
+    <InstallationTarget Id="Microsoft.VisualStudio.Code" />
+  </Installation>
+  <Dependencies />
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.Code.Manifest" Path="extension/package.json" />
+  </Assets>
+</PackageManifest>
+"""
+        content_types = """<?xml version="1.0" encoding="utf-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="json" ContentType="application/json" />
+  <Default Extension="js" ContentType="application/javascript" />
+  <Default Extension="md" ContentType="text/markdown" />
+  <Override PartName="/extension.vsixmanifest" ContentType="text/xml" />
+</Types>
+"""
+        vsix_path = ROOT / "Kaptia-Ask-Context.vsix"
+        with zipfile.ZipFile(vsix_path, "w", compression=zipfile.ZIP_DEFLATED) as package:
+            package.writestr("[Content_Types].xml", content_types)
+            package.writestr("extension.vsixmanifest", manifest)
+            for name in required:
+                package.write(extension_dir / name, "extension/" + name)
+
+        candidates = [
+            shutil.which("code"),
+            str(Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Microsoft VS Code" / "bin" / "code.cmd"),
+            str(Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Microsoft VS Code" / "bin" / "code.cmd"),
+        ]
+        code_cmd = next((item for item in candidates if item and (Path(item).is_file() or shutil.which(item))), None)
+        if not code_cmd:
+            self.update_ui("Kaptia installed", f"VS Code was not detected. The editor extension is ready at {vsix_path}; install it later from VS Code Extensions > … > Install from VSIX.", "EDITOR", 100, False)
+            return
+        self.update_ui("Installing editor integration…",
+                       "Adding the '問問 Kaptia' right-click command to VS Code. No code is sent to a cloud service.",
+                       "EDITOR", 100, True)
+        result = subprocess.run([code_cmd, "--install-extension", str(vsix_path), "--force"],
+                                cwd=app_dir, capture_output=True, text=True, timeout=120)
+        if result.returncode == 0:
+            self.update_ui("Editor integration installed",
+                           "In VS Code, select code, right-click, then choose '問問 Kaptia'.",
+                           "EDITOR", 100, False)
+        else:
+            detail = (result.stderr or result.stdout or "VS Code did not confirm extension installation.").strip()[-700:]
+            self.update_ui("Kaptia installed; editor integration needs attention",
+                           f"Extension package: {vsix_path}. Install it manually from VS Code > Extensions > … > Install from VSIX. {detail}",
+                           "EDITOR", 100, False)
+
     def install(self):
         try:
             ROOT.mkdir(parents=True, exist_ok=True)
@@ -264,6 +333,7 @@ class Installer(tk.Tk):
                                "TRAINING", 100, True)
             subprocess.run(train_command, check=True, cwd=app_dir)
 
+            self._install_vscode_extension(app_dir)
             self.update_ui("Launching Kaptia…",
                            "Loading Kaptia's own scratch-trained checkpoint. No finished model weights are used.",
                            "COMPLETE", 100, False)
