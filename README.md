@@ -33,9 +33,11 @@ Kaptia 加入了原創的輕量候選比較策略，參考「推論時增加有�
 - 目前僅接入 Python 推論流程，不會自動影響網頁端 Transformers.js/ONNX 或 iPhone Safari。
 - 測試：`python -m unittest discover -s scripts -p "test_*.py"`。
 
-## Kaptia 模型自主化
+## Kaptia 從零預訓練
 
-Kaptia 是完整模型系統的產品名稱。程式預設已移除 Qwen，改用可替換的 HuggingFaceTB/SmolLM2-1.7B-Instruct 作為文字生成後端；它仍是第三方基礎模型，不代表 Kaptia 已有獨立預訓練權重。模型自主化路線、訓練階段、權重來源透明度與發布門檻見 [`docs/KAPTIA_MODEL_AUTONOMY_ROADMAP.md`](docs/KAPTIA_MODEL_AUTONOMY_ROADMAP.md)。品牌名稱不等於獨立訓練權重；目前仍需完成實際訓練、盲評、模型轉換及 Windows/iPhone 端到端驗收。
+Kaptia 只允許使用 `scripts/kaptia_scratch_model.py` 定義、從隨機初始化開始訓練的自有 Transformer。聊天入口拒絕來源不明的 checkpoint，不會載入 SmolLM2、Qwen、Llama、Gemma、Ollama 成品模型、第三方 Tokenizer、蒸餾權重或 LoRA/QLoRA adapter。
+
+Windows 安裝器會使用 `training/bootstrap_dialogue_seed.jsonl` 建立小型起步語料，從隨機權重訓練 1,000 步；續訓資料保存在本機 Kaptia 資料目錄。這個小型語料只能驗證訓練與推論管線，不能證明已具備通用對話能力。完整規格見 [從零預訓練文件](docs/KAPTIA_SCRATCH_PRETRAINING.md) 與 [自主化路線圖](docs/KAPTIA_MODEL_AUTONOMY_ROADMAP.md)。
 
 ## 核心憲法與安全邊界
 
@@ -78,7 +80,7 @@ Kaptia 是完整模型系統的產品名稱。程式預設已移除 Qwen，改�
 4. 首次啟動會建立虛擬環境、安裝 PyTorch，並以內建示範語料從隨機權重訓練 Kaptia 起步模型；不會下載成品模型。
 5. 後續再次雙擊啟動即可。
 
-若使用離線模式，請先完成一次完整模型下載，再設定環境變數 `KAPTIA_LOCAL_ONLY=1`。沒有快取完整模型時，離線載入會明確報錯。
+模型權重由 Kaptia 本機訓練產生；不需要下載任何第三方成品模型。
 
 ## 從零預訓練
 
@@ -90,14 +92,14 @@ Kaptia 是完整模型系統的產品名稱。程式預設已移除 Qwen，改�
 
 Windows 啟動器目前使用內建的少量對話示範語料進行起步訓練；它不是足以訓練通用語言模型的大型語料。要提升語言理解能力，必須擴充合法授權且具多樣性的原始文本，並在可用 GPU 上進行大量訓練。不得把起步訓練稱為完成的通用模型。
 
-雙端設計、iPhone Safari 的模型相容性與未完成項目請見 [`docs/KAPTIA_MODEL_PLAN.md`](docs/KAPTIA_MODEL_PLAN.md)。Windows 訓練成功不代表 PEFT adapter 可直接在 Safari 執行；手機端需另外驗證 ONNX/瀏覽器模型與本機知識檢索。
+雙端設計、iPhone Safari 的模型相容性與未完成項目請見 [`docs/KAPTIA_MODEL_PLAN.md`](docs/KAPTIA_MODEL_PLAN.md)。Kaptia 的 PyTorch checkpoint 尚不能直接在 Safari 執行；手機端需另外實作並驗證適用的匯出格式、瀏覽器推論與本機知識檢索。
 
 ## 已知限制與驗收狀態
 
 - 規劃器、生成器與審核器都使用同一個語言模型；分類與自我審核可能出錯。
 - 外部搜尋、Office/PDF 內容抽取、真正的 DOCX/PPTX/PDF 產生器、圖表工具與網頁 Artifact 發布尚未接入。
 - DOCX/PPTX 匯出需要可選套件；PDF 目前對中文內容會拒絕輸出，直到配置繁體中文字型。所有格式仍需目標電腦實機驗收。\n- 工具呼叫使用固定允許清單與固定檢查命令，不支援任意 shell；檔案讀取只允許清單內專案檔案。\n- 專案記憶只在使用者明確下指令時寫入，避免自動保存完整私人對話。
-- CUDA、PyTorch、顯卡驅動、模型下載、推論、檔案交付、adapter 載入與訓練都尚未在目標電腦驗收。
+- CUDA、PyTorch、顯卡驅動、模型下載、推論、檔案交付、checkpoint 載入與訓練都尚未在目標電腦驗收。
 - 不宣稱已執行未實際執行的安裝、訓練、編譯或測試。
 - 不要將 API 金鑰、密碼、私人對話或個資提交到 Git。
 
@@ -109,7 +111,7 @@ Windows 啟動器目前使用內建的少量對話示範語料進行起步訓練
 - [ ] 短內容與長內容工作流程均完成實機測試
 - [ ] 驗證失敗、審核器輸出錯誤及檔案寫入失敗時有明確回報
 - [ ] 本機交付檔案讀回核對成功
-- [ ] 可載入相容的微調 adapter（若已訓練）
+- [ ] 可載入來源可驗證的 Kaptia scratch checkpoint
 - [ ] 訓練腳本完成小型測試並保留真實日誌
 - [ ] 離線模式可使用已完整快取的模型啟動
 
