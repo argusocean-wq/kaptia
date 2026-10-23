@@ -245,10 +245,11 @@ class Installer(tk.Tk):
 
             latest_checkpoint = model_dir / "latest_checkpoint.pt"
             best_checkpoint = model_dir / "best_checkpoint.pt"
+            additional_steps = "1000" if latest_checkpoint.is_file() else "10000"
             train_command = [
                 str(venv_python), str(app_dir / "scripts" / "train_kaptia_scratch.py"),
                 "--data-dir", str(corpus_dir), "--output-dir", str(model_dir),
-                "--steps", "1000", "--eval-interval", "100", "--eval-batches", "2",
+                "--steps", additional_steps, "--eval-interval", "500", "--eval-batches", "2",
                 "--batch-size", "4", "--block-size", "128", "--layers", "2",
                 "--heads", "2", "--width", "64", "--context-length", "256", "--device", "auto"
             ]
@@ -259,7 +260,7 @@ class Installer(tk.Tk):
                                "TRAINING", 100, True)
             else:
                 self.update_ui("Training Kaptia from scratch…",
-                               "Initializing every model weight randomly. The small bundled corpus is only a starter dataset.",
+                               "Initializing every model weight randomly for 10,000 steps. The small bundled corpus is only a starter dataset.",
                                "TRAINING", 100, True)
             subprocess.run(train_command, check=True, cwd=app_dir)
 
