@@ -38,7 +38,7 @@ jobs:
           cat training/scratch_corpus/metadata.json
       - name: Train Kaptia from random initialization
         run: |
-          python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 1000 --eval-interval 100 --eval-batches 2 --batch-size 4 --block-size 128 --layers 2 --heads 2 --width 64 --context-length 256 --device cpu
+          python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 10000 --eval-interval 500 --eval-batches 2 --batch-size 4 --block-size 128 --layers 2 --heads 2 --width 64 --context-length 256 --device cpu
       - name: Verify checkpoint provenance and training progress
         run: |
           python - <<'PY'
@@ -50,7 +50,7 @@ jobs:
           checkpoint = torch.load(root / "latest_checkpoint.pt", map_location="cpu", weights_only=False)
           assert checkpoint.get("initialization") == "random"
           assert checkpoint.get("pretrained_source") is None
-          assert int(checkpoint.get("step", 0)) >= 1000
+          assert int(checkpoint.get("step", 0)) >= 10000
           log = [json.loads(line) for line in (root / "training_log.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
           assert log, "training log is empty"
           assert all("train" in row and "validation" in row for row in log)
