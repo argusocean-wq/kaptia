@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,6 +22,49 @@ MAX_FILE_BYTES = 2_000_000
 MAX_CHUNKS = 20000
 CHUNK_SIZE = 900
 CHUNK_OVERLAP = 120
+INDEXES_DIR = VECTOR_DIR / "indexes"
+CURRENT_INDEX_FILE = VECTOR_DIR / "CURRENT"
+_INDEX_ID_RE = re.compile(r"^index-[a-f0-9]{32}$")
+
+
+def _resolve_active_index_dir():
+    """Resolve CURRENT to a contained immutable index directory; legacy only if pointer is absent."""
+    if not CURRENT_INDEX_FILE.exists():
+        # Read old layout only for installations that have not migrated yet.
+        if all((VECTOR_DIR / name).is_file() for name in ("vectors.npy", "documents.json", "manifest.json")):
+            return VECTOR_DIR
+        raise FileNotFoundError("目前沒有有效的 RAG 索引；請先執行 ingest_user_documents")
+    pointer = CURRENT_INDEX_FILE.read_text(encoding="ascii").strip()
+    if not _INDEX_ID_RE.fullmatch(pointer):
+        raise ValueError("RAG CURRENT 指標格式無效，拒絕載入索引")
+    root = INDEXES_DIR.resolve()
+    candidate = (INDEXES_DIR / pointer).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("RAG 索引路徑超出索引根目錄") from exc
+    if not candidate.is_dir():
+        raise FileNotFoundError("CURRENT 指向的 RAG 索引不存在")
+    return candidate
+
+
+def _publish_index_pointer(index_id):
+    """Atomically switch readers to a fully validated immutable index."""
+    if not _INDEX_ID_RE.fullmatch(index_id):
+        raise ValueError("RAG 索引版本 ID 無效")
+    VECTOR_DIR.mkdir(parents=True, exist_ok=True)
+    pointer_tmp = VECTOR_DIR / ("CURRENT.tmp-" + uuid.uuid4().hex)
+    try:
+        with pointer_tmp.open("x", encoding="ascii", newline="\\n") as handle:
+            handle.write(index_id + "\\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(pointer_tmp, CURRENT_INDEX_FILE)
+    finally:
+        try:
+            pointer_tmp.unlink()
+        except FileNotFoundError:
+            pass
 
 
 def _result(tool, ok, **payload):
@@ -74,11 +118,15 @@ def ingest_user_documents():
         vectors = model.encode([d["text"] for d in docs], normalize_embeddings=True,
                                convert_to_numpy=True, show_progress_bar=False)
         VECTOR_DIR.mkdir(parents=True, exist_ok=True)
-        # Stage all artifacts first; replace the manifest last so readers can detect
-        # interrupted writes instead of silently trusting a partially updated index.
-        vectors_tmp = VECTOR_DIR / "vectors.npy.tmp"
-        documents_tmp = VECTOR_DIR / "documents.json.tmp"
-        manifest_tmp = VECTOR_DIR / "manifest.json.tmp"
+        INDEXES_DIR.mkdir(parents=True, exist_ok=True)
+        # Build an immutable version directory. Readers continue using CURRENT's old
+        # index until every file has been written and validated successfully.
+        index_id = "index-" + uuid.uuid4().hex
+        staging_dir = INDEXES_DIR / (".staging-" + uuid.uuid4().hex)
+        staging_dir.mkdir()
+        vectors_tmp = staging_dir / "vectors.npy"
+        documents_tmp = staging_dir / "documents.json"
+        manifest_tmp = staging_dir / "manifest.json"
         with vectors_tmp.open("wb") as handle:
             np.save(handle, vectors.astype("float32"), allow_pickle=False)
         documents_tmp.write_text(
@@ -98,12 +146,14 @@ def ingest_user_documents():
                 or staged_vectors.shape[1] != staged_manifest["vector_dimensions"]
                 or not np.isfinite(staged_vectors).all()):
             raise ValueError("暫存索引驗證失敗，拒絕更新正式索引")
-        os.replace(vectors_tmp, VECTOR_DIR / "vectors.npy")
-        os.replace(documents_tmp, VECTOR_DIR / "documents.json")
-        os.replace(manifest_tmp, VECTOR_DIR / "manifest.json")
+        # Directory rename publishes the completed immutable index; CURRENT is the
+        # single atomic switch. A crash before the switch leaves the previous index live.
+        final_dir = INDEXES_DIR / index_id
+        os.replace(staging_dir, final_dir)
+        _publish_index_pointer(index_id)
         return _result("ingest_user_documents", True, chunks=len(docs),
                        sources=len({d["source"] for d in docs}), model=model_name,
-                       index=str(VECTOR_DIR))
+                       index=str(final_dir), active_pointer=str(CURRENT_INDEX_FILE))
     except Exception as exc:
         return _result("ingest_user_documents", False,
                        error=f"{type(exc).__name__}: {exc}")
@@ -117,9 +167,10 @@ def search_user_documents(query, top_k=5):
     try:
         import numpy as np
         from sentence_transformers import SentenceTransformer
-        vectors = np.load(VECTOR_DIR / "vectors.npy", allow_pickle=False)
-        docs = json.loads((VECTOR_DIR / "documents.json").read_text(encoding="utf-8"))
-        manifest = json.loads((VECTOR_DIR / "manifest.json").read_text(encoding="utf-8"))
+        index_dir = _resolve_active_index_dir()
+        vectors = np.load(index_dir / "vectors.npy", allow_pickle=False)
+        docs = json.loads((index_dir / "documents.json").read_text(encoding="utf-8"))
+        manifest = json.loads((index_dir / "manifest.json").read_text(encoding="utf-8"))
         if not isinstance(manifest, dict) or manifest.get("schema_version") != 1:
             raise ValueError("向量索引 manifest 版本無效")
         if not isinstance(docs, list) or not docs or vectors.ndim != 2:
