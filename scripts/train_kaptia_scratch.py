@@ -134,7 +134,7 @@ def main() -> None:
                 record = {"step": step, "elapsed_seconds": round(time.time() - started, 2), **metrics}
                 log.write(json.dumps(record, ensure_ascii=False) + "\n")
                 log.flush()
-                print(f"[step {step}/{args.steps}] train_loss={metrics['train']['loss']:.4f} val_loss={metrics['validation']['loss']:.4f} val_ppl={metrics['validation']['perplexity']:.2f}")
+                print(f"[step {step} total; segment {step - start_step}/{args.steps}] train_loss={metrics['train']['loss']:.4f} val_loss={metrics['validation']['loss']:.4f} val_ppl={metrics['validation']['perplexity']:.2f}")
                 checkpoint = {
                     "config": config.__dict__,
                     "model_state_dict": model.state_dict(),
