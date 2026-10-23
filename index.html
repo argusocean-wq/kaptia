@@ -72,6 +72,67 @@ button:focus-visible,textarea:focus-visible{outline:2px solid white;outline-offs
   #modelBtn{width:100%}
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}#ambient{display:none}}
+/* ChatGPT-inspired monochrome workspace */
+:root{color-scheme:dark;--bg:#212121;--panel:#2f2f2f;--panel2:#383838;--line:#424242;--muted:#b4b4b4;--white:#f5f5f5}
+body{background:#212121}#ambient{display:none}
+.app{max-width:none;grid-template-columns:260px minmax(0,1fr);min-height:100dvh}
+aside{background:#171717;border-right:0;padding:18px 12px 14px;gap:18px}
+.brand{padding:4px 8px 12px}.brand b{letter-spacing:.08em}
+.sidebar-chat-tools{display:grid;gap:14px}
+.sidebar-new-chat{min-height:42px;width:100%;border:1px solid #424242;border-radius:10px;background:transparent;color:#eee;text-align:left;padding:9px 12px;font:inherit;cursor:pointer}
+.sidebar-new-chat:hover{background:#252525}
+.navlabel{color:#9a9a9a;letter-spacing:.04em;font-size:12px;padding:0 10px 7px}
+.nav{gap:3px}.nav button,.ghost{border-radius:9px;padding:9px 11px;color:#d4d4d4}
+.nav button:hover,.nav button.active{background:#2a2a2a;border-color:transparent;color:#fff}
+.desktop-history{display:flex;flex-direction:column;min-height:0;flex:1}
+.desktop-history .history-list{max-height:calc(100dvh - 340px)}
+.desktop-history .history-open{padding:9px 10px;font-size:13px}
+.desktop-history .history-delete{width:32px;height:34px}
+.sidebottom{border-top:1px solid #333;padding-top:12px;gap:6px}
+.mini{border:0;background:transparent;padding:8px 10px}.mini span{color:#aaa}.mini strong{color:#eee;font-size:12px}
+main{padding:0 clamp(22px,5vw,64px) 28px;background:#212121}
+.top{border-bottom:1px solid #343434;padding:16px 0}
+.top-brand .eyebrow{display:none}.top-subtitle{font-size:14px;color:#eee;margin:0}
+.status{color:#b5b5b5}.dot{background:#bcbcbc;box-shadow:none}
+.content{max-width:820px;margin:0 auto}
+#chatView.content{display:flex;flex-direction:column;min-height:calc(100dvh - 74px);margin:0 auto;padding-top:clamp(50px,12vh,130px);padding-bottom:16px}
+#emptyHero{width:100%;margin:auto 0 26px}.hero .core-wrap{display:none}
+.hero h1{font-size:clamp(28px,3.2vw,36px);font-weight:500;letter-spacing:-.035em}
+.hero .subtitle{color:#aaa;margin:12px 0 26px}
+.suggestion-grid{max-width:650px;margin:0 auto 10px;gap:10px}
+.suggestion{background:transparent;border-color:#484848;color:#e5e5e5;border-radius:14px;min-height:58px}
+.suggestion:hover{background:#2b2b2b}.suggestion span{color:#aaa}
+.conversation{max-width:820px;gap:28px;margin:0 auto 24px}
+.user-message{background:#303030;border:0;border-radius:22px}
+.assistant-message{padding:2px 0}.message-body{font-size:15px;line-height:1.8}
+.prompt{width:100%;max-width:820px;margin:0 auto;padding:8px 10px 8px 16px;border:1px solid #505050;background:#2f2f2f;border-radius:28px;box-shadow:none;gap:8px}
+.prompt textarea{font-size:15px;min-height:42px;max-height:180px;padding:10px 2px;color:#fff}
+.prompt textarea::placeholder{color:#b0b0b0}
+.send{border:0;background:#f5f5f5;color:#171717;border-radius:50%;width:40px;height:40px;min-width:40px;padding:0;font-size:0;position:relative}
+.send:after{content:"↑";font-size:21px;font-weight:600}.send:disabled{opacity:.4}
+.hint{max-width:820px;width:100%;margin:10px auto 0;text-align:center;color:#999;font-size:11px}
+#chatView>.model-panel{max-width:820px;width:100%;margin:0 auto 12px!important;background:transparent!important;border-color:#424242!important}
+#chatView>.grid,#chatView>.notice{display:none}
+.result.visible{max-width:820px;width:100%;margin:14px auto 0;background:#262626;border-color:#444}
+.message-actions button{background:transparent;border-color:#454545;color:#bbb}
+.history-drawer{background:#171717;border-right:1px solid #383838}
+.settings-sheet{background:#202020;border-color:#444}
+.card{background:#292929;border-color:#444}.pill{background:#292929;border-color:#484848;color:#ddd}
+@media(max-width:760px){
+ .app{display:block;min-height:100dvh}aside{display:none}
+ main{padding:0 16px calc(16px + env(safe-area-inset-bottom))}
+ .app-top{margin:0 -16px;padding:10px 14px 12px;background:#212121ed;border-bottom:1px solid #343434}
+ .top-subtitle{font-size:14px}
+ #chatView.content{min-height:calc(100dvh - 70px);padding-top:clamp(70px,16vh,140px);padding-bottom:10px}
+ .hero h1{font-size:27px}.hero .subtitle{font-size:14px}
+ .suggestion-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .suggestion{background:transparent;border-color:#454545;min-height:62px}
+ .prompt{position:sticky;bottom:calc(6px + env(safe-area-inset-bottom));background:#2f2f2f;border-color:#505050}
+ .prompt .send{width:40px;height:40px;min-width:40px}
+ .hint{font-size:10px;padding-bottom:4px}
+ #chatView>.model-panel{margin-top:0!important}
+}
+
 </style>
 <style id="mobile-chat-overrides">
 .app-top{display:flex;align-items:center;gap:12px}
@@ -91,7 +152,8 @@ button:focus-visible,textarea:focus-visible{outline:2px solid white;outline-offs
 <div class="app">
 <aside>
   <div class="brand"><div class="mark"></div><div><b>KAPTIA</b><small>LOCAL LANGUAGE SYSTEM</small></div></div>
-  <div><div class="navlabel">WORKSPACE</div><nav class="nav"><button class="active" data-view="chat">◌　對話</button><button data-view="machine">▦　電腦配置</button><button data-view="repo">⌘　專案來源</button></nav></div>
+  <div class="sidebar-chat-tools"><button class="sidebar-new-chat" id="desktopNewChat" type="button">＋　新增對話</button><div class="navlabel">工作區</div><nav class="nav"><button class="active" data-view="chat">◌　對話</button><button data-view="machine">▦　電腦配置</button><button data-view="repo">⌘　專案來源</button></nav></div>
+  <div class="desktop-history"><div class="navlabel">最近對話</div><div id="desktopHistoryList" class="history-list"><p class="history-empty">尚無已儲存的對話</p></div></div>
   <div class="sidebottom"><div class="mini"><span>執行方式</span><strong>Browser Workspace</strong></div><div class="mini"><span>語言引擎</span><strong id="engineSide">尚未連接本機引擎</strong></div></div>
 </aside>
 <main>
@@ -221,7 +283,7 @@ function setStatus(text){$('statusText').textContent=text;}
 function activeChat(){return chats.find(x=>x.id===activeChatId)||null;}
 function makeChat(){const chat={id:String(Date.now())+'-'+Math.random().toString(36).slice(2,8),title:'新對話',updated:Date.now(),messages:[]};chats.unshift(chat);activeChatId=chat.id;persistChats();renderChat();renderHistory();return chat;}
 function ensureChat(){return activeChat()||makeChat();}
-function renderHistory(){const root=$('historyList');root.replaceChildren();if(!chats.length){const p=document.createElement('p');p.className='history-empty';p.textContent='尚無已儲存的對話';root.append(p);return;}chats.slice().sort((a,b)=>b.updated-a.updated).forEach(chat=>{const row=document.createElement('div');row.className='history-row'+(chat.id===activeChatId?' active':'');const open=document.createElement('button');open.type='button';open.className='history-open';open.textContent=chat.title||'新對話';open.addEventListener('click',()=>{activeChatId=chat.id;renderChat();renderHistory();closeDrawer();});const del=document.createElement('button');del.type='button';del.className='history-delete';del.textContent='⋯';del.setAttribute('aria-label','對話選項');del.addEventListener('click',()=>{if(confirm('要刪除此對話嗎？')){chats=chats.filter(x=>x.id!==chat.id);if(activeChatId===chat.id)activeChatId=chats[0]?.id||null;persistChats();renderChat();renderHistory();}});row.append(open,del);root.append(row);});}
+function renderHistory(){const roots=[$('historyList'),$('desktopHistoryList')].filter(Boolean);roots.forEach(root=>{root.replaceChildren();if(!chats.length){const p=document.createElement('p');p.className='history-empty';p.textContent='尚無已儲存的對話';root.append(p);return;}chats.slice().sort((a,b)=>b.updated-a.updated).forEach(chat=>{const row=document.createElement('div');row.className='history-row'+(chat.id===activeChatId?' active':'');const open=document.createElement('button');open.type='button';open.className='history-open';open.textContent=chat.title||'新對話';open.addEventListener('click',()=>{activeChatId=chat.id;renderChat();renderHistory();closeDrawer();});const del=document.createElement('button');del.type='button';del.className='history-delete';del.textContent='⋯';del.setAttribute('aria-label','對話選項');del.addEventListener('click',()=>{if(confirm('要刪除此對話嗎？')){chats=chats.filter(x=>x.id!==chat.id);if(activeChatId===chat.id)activeChatId=chats[0]?.id||null;persistChats();renderChat();renderHistory();}});row.append(open,del);root.append(row);});});}
 function renderChat(){const chat=activeChat();const root=$('conversation');root.replaceChildren();$('emptyHero').hidden=!!(chat&&chat.messages.length);$('result').classList.remove('visible');if(!chat||!chat.messages.length){return;}chat.messages.forEach((msg,index)=>{const item=document.createElement('article');item.className='message '+(msg.role==='user'?'user-message':'assistant-message');const body=document.createElement('div');body.className='message-body';body.textContent=msg.content;item.append(body);if(msg.role==='assistant'){const actions=document.createElement('div');actions.className='message-actions';const copy=document.createElement('button');copy.type='button';copy.textContent='複製';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(msg.content);copy.textContent='已複製';setTimeout(()=>copy.textContent='複製',1200);}catch(_){copy.textContent='無法複製';}});actions.append(copy);if(index===chat.messages.length-1){const retry=document.createElement('button');retry.type='button';retry.textContent='重新生成';retry.addEventListener('click',()=>regenerateLast());actions.append(retry);}item.append(actions);}root.append(item);});if(!window.userScrolledConversation)window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});}
 function openDrawer(){$('historyDrawer').classList.add('open');$('drawerScrim').hidden=false;$('historyDrawer').setAttribute('aria-hidden','false');}
 function closeDrawer(){$('historyDrawer').classList.remove('open');$('drawerScrim').hidden=true;$('historyDrawer').setAttribute('aria-hidden','true');}
@@ -231,6 +293,7 @@ function regenerateLast(){const chat=activeChat();if(!chat)return;const last=cha
 $('chatForm').addEventListener('submit',async e=>{e.preventDefault();const value=$('prompt').value.trim();if(!value||generating)return;if(qwenPipe){$('prompt').value='';resizePrompt();await runPrompt(value);}else{showResult('KAPTIA','模型尚未連線。請開啟「模型與設定」載入本機模型。你的訊息仍保留在輸入框，沒有送往任何外部服務。');}});
 $('historyOpen').addEventListener('click',openDrawer);$('historyClose').addEventListener('click',closeDrawer);$('drawerScrim').addEventListener('click',closeDrawer);
 $('newChatBtn').addEventListener('click',()=>{activeChatId=null;makeChat();$('prompt').focus();});
+$('desktopNewChat').addEventListener('click',()=>{activeChatId=null;makeChat();$('prompt').focus();});
 $('drawerNewChat').addEventListener('click',()=>{activeChatId=null;makeChat();closeDrawer();$('prompt').focus();});
 $('openSettings').addEventListener('click',()=>{closeDrawer();$('settingsSheet').hidden=false;});
 $('settingsClose').addEventListener('click',()=>$('settingsSheet').hidden=true);
