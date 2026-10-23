@@ -118,6 +118,41 @@ def main():
             except Exception as exc:
                 print(f"[記憶寫入失敗] {type(exc).__name__}: {exc}", file=sys.stderr)
             continue
+        if user_text == "/tasks list":
+            try:
+                from kaptia_tasks import list_tasks
+                tasks = list_tasks(limit=50)
+                print("[任務] " + (f"共 {len(tasks)} 筆" if tasks else "目前沒有任務"))
+                for task in tasks:
+                    print(f"- [{task['status']}] {task['id'][:8]} {task['title']}: {task['detail']}")
+            except Exception as exc:
+                print(f"[任務讀取失敗] {type(exc).__name__}: {exc}", file=sys.stderr)
+            continue
+        if user_text.startswith("/tasks add "):
+            try:
+                from kaptia_tasks import create_task
+                parts = user_text[len("/tasks add "):].split("|", 1)
+                if len(parts) != 2:
+                    print("格式：/tasks add 標題|任務內容")
+                else:
+                    task = create_task(parts[0].strip(), parts[1].strip())
+                    print(f"[任務已建立] {task['id']} [{task['status']}] {task['title']}")
+            except Exception as exc:
+                print(f"[任務建立失敗] {type(exc).__name__}: {exc}", file=sys.stderr)
+            continue
+        if user_text.startswith("/tasks set "):
+            try:
+                from kaptia_tasks import transition_task
+                parts = user_text[len("/tasks set "):].split("|", 2)
+                if len(parts) != 3:
+                    print("格式：/tasks set 任務ID|新狀態|變更原因")
+                    print("狀態：in_progress、blocked、completed、failed、cancelled")
+                else:
+                    task = transition_task(parts[0].strip(), parts[1].strip(), parts[2].strip())
+                    print(f"[任務已更新] {task['id']} [{task['status']}] {task['title']}")
+            except Exception as exc:
+                print(f"[任務更新失敗] {type(exc).__name__}: {exc}", file=sys.stderr)
+            continue
         try:
             result = run_workflow(generate, user_text)
             print("\nKaptia：\n" + result["content"])
