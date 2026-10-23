@@ -26,7 +26,7 @@ class PipelineToolRoutingTests(unittest.TestCase):
         events, context = _run_preflight_tools(generate, "請使用工具協作處理這項任務")
         self.assertEqual(len(calls), 1)
         self.assertTrue(any("不需要" in event for event in events))
-        self.assertEqual(context, "")
+        self.assertEqual(context, "[]")
 
 
 if __name__ == "__main__":
