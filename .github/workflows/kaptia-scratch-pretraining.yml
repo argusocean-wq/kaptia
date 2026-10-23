@@ -43,12 +43,18 @@ jobs:
         run: |
           python scripts/kaptia_prepare_text_corpus.py --input training/bootstrap_dialogue_seed.jsonl --output-dir training/scratch_corpus --val-fraction 0.10 --min-document-bytes 8
           cat training/scratch_corpus/metadata.json
-      - name: Continue training from the last Kaptia checkpoint
+      - name: Train bootstrap model without overfitting indefinitely
         shell: bash
         run: |
           if [ -f outputs/kaptia-scratch-pretrain/latest_checkpoint.pt ]; then
-            echo "Found Kaptia checkpoint; continuing for 1000 additional steps."
-            python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 1000 --eval-interval 500 --eval-batches 2 --batch-size 4 --block-size 128 --layers 2 --heads 2 --width 64 --context-length 256 --device cpu --resume outputs/kaptia-scratch-pretrain/latest_checkpoint.pt
+            current_step=$(python -c "import torch; print(int(torch.load('outputs/kaptia-scratch-pretrain/latest_checkpoint.pt', map_location='cpu', weights_only=False).get('step', 0)))")
+            if [ "$current_step" -ge 10000 ]; then
+              echo "Bootstrap training already reached $current_step steps. Not repeating the tiny corpus; add more licensed raw text before continuing."
+            else
+              remaining=$((10000 - current_step))
+              echo "Resuming Kaptia from step $current_step for $remaining additional steps."
+              python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps "$remaining" --eval-interval 500 --eval-batches 2 --batch-size 4 --block-size 128 --layers 2 --heads 2 --width 64 --context-length 256 --device cpu --resume outputs/kaptia-scratch-pretrain/latest_checkpoint.pt
+            fi
           else
             echo "No checkpoint cache found; initializing randomly and training for 10000 steps."
             python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 10000 --eval-interval 500 --eval-batches 2 --batch-size 4 --block-size 128 --layers 2 --heads 2 --width 64 --context-length 256 --device cpu
