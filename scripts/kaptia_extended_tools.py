@@ -107,6 +107,99 @@ def _hybrid_rank(query, docs, vector_scores, top_k):
     return [(i, fused[i], lexical_scores[i]) for i in ordered]
 
 
+
+# Lightweight domain routing: explicit aliases are deterministic and auditable.
+# Keep narrow subdomains (e.g. virology) more specific than broad domains (biology).
+_REVIEW_DOMAINS = {
+    "virology": {
+        "label": "病毒學",
+        "aliases": ["病毒學", "病毒", "virology", "virus", "viral", "病毒感染", "病毒複製"],
+        "parent": "biology",
+    },
+    "biology": {
+        "label": "生物學",
+        "aliases": ["生物學", "生物", "biology", "biological", "細胞", "生態", "遺傳"],
+        "parent": None,
+    },
+    "medicine": {
+        "label": "醫學",
+        "aliases": ["醫學", "臨床", "診斷", "治療", "medical", "clinical"],
+        "parent": None,
+    },
+    "computer_science": {
+        "label": "資訊科學",
+        "aliases": ["資訊科學", "電腦科學", "程式", "演算法", "資安", "computer science", "software"],
+        "parent": None,
+    },
+    "political_science": {
+        "label": "政治學",
+        "aliases": ["政治學", "政治制度", "選舉", "公共政策", "political science", "政策分析"],
+        "parent": None,
+    },
+}
+
+
+def detect_review_scope(query):
+    """Detect explicit domain/subdomain terms; return matched scopes and an auditable rationale."""
+    if not isinstance(query, str) or not query.strip() or len(query) > 2000:
+        return _result("detect_review_scope", False, error="query 必須為 1–2000 字元")
+    normalized = query.casefold()
+    matches = []
+    for key, definition in _REVIEW_DOMAINS.items():
+        found = sorted({alias for alias in definition["aliases"] if alias.casefold() in normalized},
+                       key=lambda item: (-len(item), item))
+        if found:
+            matches.append({
+                "id": key,
+                "label": definition["label"],
+                "matched_terms": found,
+                "parent": definition["parent"],
+                "specificity": max(map(len, found)),
+            })
+    # Keep the narrowest matched domain first; do not silently discard broader matches.
+    matches.sort(key=lambda item: (-item["specificity"], item["id"]))
+    primary = matches[0] if matches else None
+    return _result("detect_review_scope", True, query=query,
+                   scope=primary["id"] if primary else None,
+                   scope_label=primary["label"] if primary else "一般範圍",
+                   matches=matches,
+                   needs_clarification=bool(not matches),
+                   note="關鍵詞只用來選擇檢索範圍，不代表使用者已確認該分類；未命中時保留一般範圍。")
+
+
+def retrieve_scoped_knowledge(query, top_k=5):
+    """Detect domain, retrieve related memory, and return evidence plus synthesis instructions."""
+    detected = detect_review_scope(query)
+    if not detected["ok"]:
+        return detected
+    scopes = detected["matches"]
+    search_query = query
+    if scopes:
+        # Add matched labels/terms to help both vector and lexical retrieval; original query stays intact.
+        expansion = []
+        for scope in scopes:
+            expansion.extend([scope["label"], *scope["matched_terms"][:3]])
+        search_query = query + " " + " ".join(dict.fromkeys(expansion))
+    retrieved = search_user_documents(search_query, top_k=top_k)
+    if not retrieved.get("ok"):
+        return _result("retrieve_scoped_knowledge", False,
+                       scope=detected["scope"], scope_label=detected["scope_label"],
+                       matched_scopes=scopes, retrieval_error=retrieved.get("error"),
+                       note="領域已判定，但記憶庫檢索失敗；不得假裝已有記憶庫證據。")
+    results = retrieved.get("results", [])
+    return _result("retrieve_scoped_knowledge", True,
+                   original_query=query, retrieval_query=search_query,
+                   scope=detected["scope"], scope_label=detected["scope_label"],
+                   matched_scopes=scopes, evidence=results,
+                   synthesis_plan=[
+                       "先以主要領域及更窄子領域組織證據；不可把相鄰領域資料混成同一結論。",
+                       "合併重複內容，保留相互矛盾的證據與來源路徑。",
+                       "區分記憶庫明確記載、根據資料推論、以及目前資料不足的部分。",
+                       "每個實質結論附上對應 source 與 chunk；證據不足時明確說明，不補造來源。"
+                   ],
+                   retrieval=retrieved.get("retrieval"),
+                   note="本工具提供領域路由、檢索證據與統整規則；最終自然語言統整需由上層回答流程使用 evidence 完成。")
+
 def ingest_user_documents():
     """Index local .txt/.md documents into a persistent embedding-backed vector store."""
     try:
@@ -348,7 +441,7 @@ def dispatch_tool(name, arguments):
         "calculate": calculate,
         "web_search": web_search,
         "ingest_user_documents": ingest_user_documents,
-        "search_user_documents": search_user_documents,
+        "search_user_documents": search_user_documents,\n        "detect_review_scope": detect_review_scope,\n        "retrieve_scoped_knowledge": retrieve_scoped_knowledge,
     }
     try:
         if name not in registry:
@@ -363,5 +456,5 @@ def dispatch_tool(name, arguments):
 
 
 if __name__ == "__main__":
-    print(json.dumps({"tools": ["calculate", "web_search", "ingest_user_documents", "search_user_documents"],
+    print(json.dumps({"tools": ["calculate", "web_search", "ingest_user_documents", "search_user_documents", "detect_review_scope", "retrieve_scoped_knowledge"],
                       "domain_config": str(DOMAIN_CONFIG)}, ensure_ascii=False, indent=2))
