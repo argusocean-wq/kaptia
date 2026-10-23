@@ -1,25 +1,28 @@
-name: Build Kaptia Windows installer
+name: Build and publish Kaptia Windows installer
 
 on:
   push:
-    branches:
-      - main
+    branches: ["main"]
     paths:
       - "installer/**"
       - ".github/workflows/build-windows-installer.yml"
   workflow_dispatch:
-  release:
-    types: [published]
 
 permissions:
   contents: write
+
+concurrency:
+  group: kaptia-windows-installer
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -28,16 +31,23 @@ jobs:
         run: python -m pip install --upgrade pyinstaller
       - name: Build Windows executable
         run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name Kaptia-Setup installer/windows_installer.py
-      - name: Upload executable artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Kaptia-Setup-Windows
-          path: dist/Kaptia-Setup.exe
-          if-no-files-found: error
-          retention-days: 30
-      - name: Publish tagged release asset
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Move rolling installer tag to this source revision
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f kaptia-latest "$GITHUB_SHA"
+          git push origin refs/tags/kaptia-latest --force
+      - name: Publish or update rolling GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: kaptia-latest
+          name: Kaptia Latest Windows Installer
+          body: |
+            Rolling Windows installer built from the latest main-branch installer source.
+            The installer downloads the current Kaptia source and prepares the local Python runtime.
+            First launch requires network access and downloads the configured language model.
+          target_commitish: ${{ github.sha }}
           files: dist/Kaptia-Setup.exe
-          generate_release_notes: true
+          overwrite_files: true
+          make_latest: true
