@@ -70,7 +70,7 @@ class Installer(tk.Tk):
         tk.Label(shell, text="Your AI workspace,\nready on this PC.",
                  bg=BG, fg=TEXT, justify="left",
                  font=("Segoe UI", 27, "bold")).pack(anchor="w")
-        tk.Label(shell, text="Install Kaptia locally. Your model runs on this computer after setup.",
+        tk.Label(shell, text="Install Kaptia locally. It trains its own small language model from random initialization; no finished model is downloaded.",
                  bg=BG, fg=MUTED, justify="left",
                  font=("Segoe UI", 10)).pack(anchor="w", pady=(10, 22))
 
