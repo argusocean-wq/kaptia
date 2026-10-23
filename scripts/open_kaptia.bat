@@ -43,7 +43,7 @@ if not exist "training\scratch_corpus\train.bin" (
 if not exist "outputs\kaptia-scratch-pretrain\best_checkpoint.pt" (
   echo [INFO] No Kaptia checkpoint exists. Starting real training from random initialization.
   echo [INFO] This bootstrap corpus is small; this creates a starter checkpoint, not a capable general assistant.
-  python scripts\train_kaptia_scratch.py --data-dir training\scratch_corpus --output-dir outputs\kaptia-scratch-pretrain --steps 1000 --eval-interval 100 --eval-batches 2 --batch-size 4 --block-size 128 --layers 2 --heads 2 --width 64 --context-length 256 --device auto
+  python scripts\train_kaptia_scratch.py --data-dir training\scratch_corpus --output-dir outputs\kaptia-scratch-pretrain --steps 10000 --eval-interval 500 --eval-batches 2 --batch-size 4 --block-size 128 --layers 2 --heads 2 --width 64 --context-length 256 --device auto
   if errorlevel 1 goto :failed
 )
 
