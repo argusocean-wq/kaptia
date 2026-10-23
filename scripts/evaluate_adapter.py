@@ -1,6 +1,6 @@
 """Compare the configured base backend and Kaptia adapter on the held-out project-knowledge set.
 
-Writes one JSON object per eval prompt to outputs/kaptia-language-qlora/comparison.jsonl.
+Writes one JSON object per eval prompt to outputs/kaptia-smollm2-qlora/comparison.jsonl.
 This is a reproducible output capture, not an automatic quality score.
 """
 import hashlib
@@ -14,7 +14,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 ROOT = Path(__file__).resolve().parents[1]
 EVAL_PATHS = [ROOT / "training" / "eval_dataset.jsonl", ROOT / "training" / "code_eval_dataset.jsonl"]
-ADAPTER_DIR = ROOT / "outputs" / "kaptia-language-qlora" / "adapter"
+ADAPTER_DIR = ROOT / "outputs" / "kaptia-smollm2-qlora" / "adapter"
 OUT_PATH = ROOT / "outputs" / "kaptia-language-qlora" / "comparison.jsonl"
 MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", "HuggingFaceTB/SmolLM2-1.7B-Instruct")
 MAX_NEW_TOKENS = int(os.environ.get("KAPTIA_EVAL_MAX_NEW_TOKENS", "256"))
