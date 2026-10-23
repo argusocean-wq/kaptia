@@ -9,7 +9,7 @@ from kaptia_pipeline import run_workflow
 
 ROOT = Path(__file__).resolve().parents[1]
 # The model identifier is an internal implementation detail, not product branding.
-DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+DEFAULT_MODEL = "Qwen/Qwen2.5-Coder-7B-Instruct"
 MODEL_ID = os.environ.get("KAPTIA_BASE_MODEL", DEFAULT_MODEL)
 ADAPTER_DIR = ROOT / "outputs" / "kaptia-language-qlora" / "adapter"
 
