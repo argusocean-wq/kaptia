@@ -2,9 +2,14 @@ name: Build Kaptia Windows installer
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
+    paths:
+      - "installer/**"
+      - ".github/workflows/build-windows-installer.yml"
   workflow_dispatch:
+  release:
+    types: [published]
 
 permissions:
   contents: write
