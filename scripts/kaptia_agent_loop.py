@@ -18,12 +18,16 @@ TOOL_LOOP_SYSTEM = """你是 Kaptia 的工具規劃器。只輸出單一 JSON ob
 {"action":"tool","name":"run_project_check","arguments":{"check_name":"python_compile","timeout_seconds":120}}
 {"action":"done","summary":"不需要其他本機工具的簡短原因"}
 工具只可用於目前任務真正需要的本機專案資料或固定檢查。不要猜測工具結果。
-不得要求其他工具、任意命令、任意路徑、網路、刪除或寫入檔案。"""
+可用工具：search_project_knowledge、read_project_file、run_project_check、calculate、web_search、ingest_user_documents、search_user_documents。不得要求任意命令、任意路徑、刪除或寫入檔案。網路搜尋僅限 web_search 工具，且結果必須視為未核實線索。"""
 
 TOOL_SCHEMAS = {
     "search_project_knowledge": {"query": str, "top_k": int},
     "read_project_file": {"path": str},
     "run_project_check": {"check_name": str, "timeout_seconds": int},
+    "calculate": {"expression": str},
+    "web_search": {"query": str, "max_results": int},
+    "ingest_user_documents": {},
+    "search_user_documents": {"query": str, "top_k": int},
 }
 
 
@@ -77,6 +81,12 @@ def _validate_request(request):
         "python_compile", "training_data", "code_data", "knowledge_tests"
     } or not 1 <= args["timeout_seconds"] <= 180):
         raise ValueError("檢查名稱或逾時設定無效")
+    if name == "calculate" and (not args["expression"].strip() or len(args["expression"]) > 300):
+        raise ValueError("算式長度超出範圍")
+    if name == "web_search" and (not args["query"].strip() or len(args["query"]) > 500 or not 1 <= args["max_results"] <= 8):
+        raise ValueError("網路搜尋參數超出範圍")
+    if name == "search_user_documents" and (not args["query"].strip() or len(args["query"]) > 2000 or not 1 <= args["top_k"] <= 10):
+        raise ValueError("文件檢索參數超出範圍")
     return {"action": "tool", "name": name, "arguments": args}
 
 
