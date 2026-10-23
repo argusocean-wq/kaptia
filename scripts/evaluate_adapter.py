@@ -30,18 +30,19 @@ def sha256(path):
 
 def load_rows():
     rows = []
-    with EVAL_PATH.open("r", encoding="utf-8") as f:
-        for line_no, line in enumerate(f, 1):
-            if not line.strip():
-                continue
-            item = json.loads(line)
-            if not isinstance(item.get("instruction"), str) or not item["instruction"].strip():
-                raise ValueError(f"驗收資料第 {line_no} 行 instruction 無效")
-            rows.append(item)
+    for eval_path in EVAL_PATHS:
+        with eval_path.open("r", encoding="utf-8") as f:
+            for line_no, line in enumerate(f, 1):
+                if not line.strip():
+                    continue
+                item = json.loads(line)
+                if not isinstance(item.get("instruction"), str) or not item["instruction"].strip():
+                    raise ValueError(f"{eval_path.name} 第 {line_no} 行 instruction 無效")
+                item["_eval_source"] = eval_path.name
+                rows.append(item)
     if not rows:
         raise ValueError("驗收資料為空")
     return rows
-
 
 def generate(tokenizer, model, instruction, extra_input=""):
     user_text = instruction
