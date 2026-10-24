@@ -41,6 +41,28 @@ jobs:
           key: kaptia-base-v2-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
             kaptia-base-v2-${{ github.ref_name }}-
+      - name: Validate base-language corpus records
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          paths = [Path('training/base_language_corpus.jsonl'), Path('training/engineering_review_corpus.jsonl')]
+          total = 0
+          for path in paths:
+              count = 0
+              for line_no, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
+                  if not line.strip():
+                      continue
+                  row = json.loads(line)
+                  assert isinstance(row, dict) and isinstance(row.get('text'), str), f'{path}:{line_no}: expected text field'
+                  assert len(row['text'].encode('utf-8')) >= 32, f'{path}:{line_no}: document too short'
+                  count += 1
+              assert count > 0, f'{path}: no records'
+              total += count
+              print(f'[PASS] {path}: {count} valid documents')
+          assert total >= 80, f'Expected at least 80 curated documents; found {total}'
+          print(f'[PASS] Total curated documents: {total}')
+          PY
       - name: Prepare curated base-language corpus
         run: |
           mkdir -p training/base_language_input
