@@ -16,13 +16,15 @@ SOURCE_ZIP = f"https://github.com/{OWNER_REPO}/archive/refs/heads/main.zip"
 ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "Kaptia"
 ZIP_PATH = ROOT / "kaptia-source.zip"
 
-BG = "#080808"
-PANEL = "#151515"
-PANEL_2 = "#242424"
-TEXT = "#FFFFFF"
-MUTED = "#B8B8B8"
-ACCENT = "#FFFFFF"
-BORDER = "#3A3A3A"
+BG = "#090B10"
+PANEL = "#111620"
+PANEL_2 = "#1B2330"
+TEXT = "#F4F7FF"
+MUTED = "#9AA7BC"
+ACCENT = "#A9B9FF"
+BORDER = "#293346"
+ACCENT_2 = "#7C5CFF"
+GREEN = "#77E4C2"
 
 try:
     from build_info import BUILD_NUMBER, BUILD_TAG
@@ -44,84 +46,152 @@ class Installer(tk.Tk):
         self._build_ui()
 
     def _build_ui(self):
+        self.title("Kaptia · 安裝程式")
+        self.geometry("790x600")
+        self.minsize(720, 560)
+        self.configure(bg=BG)
+
+        self.status = tk.StringVar(value="準備好建立你的本機 AI 工作空間")
+        self.detail = tk.StringVar(value="安裝程式將下載 Kaptia、建立獨立環境，並準備本機模型。")
+        self.percent = tk.DoubleVar(value=0)
+        self.phase = tk.StringVar(value="待命")
+        self._gradient_phase = 0
+
         style = ttk.Style(self)
         style.theme_use("clam")
-        style.configure("Kaptia.Horizontal.TProgressbar",
-                        troughcolor=PANEL_2, background="#FFFFFF",
-                        bordercolor=PANEL_2, lightcolor="#FFFFFF", darkcolor="#D8D8D8",
-                        thickness=8)
+        style.configure(
+            "Kaptia.Horizontal.TProgressbar",
+            troughcolor=PANEL_2, background=ACCENT,
+            bordercolor=PANEL_2, lightcolor=ACCENT,
+            darkcolor=ACCENT_2, thickness=7
+        )
+
+        # Ambient background and restrained animated accent.
+        self.canvas = tk.Canvas(self, bg=BG, highlightthickness=0, bd=0)
+        self.canvas.place(relx=0, rely=0, relwidth=1, relheight=1)
+        self.canvas.bind("<Configure>", self._paint_background)
 
         shell = tk.Frame(self, bg=BG)
-        shell.pack(fill="both", expand=True, padx=28, pady=24)
+        shell.pack(fill="both", expand=True, padx=34, pady=26)
 
-        top = tk.Frame(shell, bg=BG)
-        top.pack(fill="x")
-        mark = tk.Frame(top, bg="#FFFFFF", width=42, height=42)
+        header = tk.Frame(shell, bg=BG)
+        header.pack(fill="x")
+
+        mark = tk.Canvas(header, width=46, height=46, bg=BG, highlightthickness=0)
         mark.pack(side="left")
-        mark.pack_propagate(False)
-        tk.Label(mark, text="K", bg="#FFFFFF", fg="#080808",
-                 font=("Segoe UI", 22, "bold")).pack(expand=True)
-        brand = tk.Frame(top, bg=BG)
-        brand.pack(side="left", padx=13)
+        mark.create_oval(3, 3, 43, 43, fill="#1D2940", outline="#647DAD", width=1)
+        mark.create_oval(11, 11, 35, 35, fill="#A9B9FF", outline="")
+        mark.create_oval(18, 8, 29, 19, fill="#F4F7FF", outline="")
+
+        brand = tk.Frame(header, bg=BG)
+        brand.pack(side="left", padx=(13, 0))
         tk.Label(brand, text="K A P T I A", bg=BG, fg=TEXT,
                  font=("Segoe UI", 15, "bold")).pack(anchor="w")
-        tk.Label(brand, text="LOCAL AI WORKSPACE  /  WINDOWS SETUP",
+        tk.Label(brand, text="LOCAL INTELLIGENCE  /  WINDOWS",
                  bg=BG, fg=MUTED, font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(3, 0))
-        tk.Label(top, text="SETUP  •  01", bg=BG, fg="#FFFFFF",
-                 font=("Segoe UI", 9, "bold")).pack(side="right", pady=10)
 
-        tk.Frame(shell, bg=BORDER, height=1).pack(fill="x", pady=(22, 22))
+        badge = tk.Label(header, text="  SECURE LOCAL SETUP  ", bg="#17231F",
+                         fg=GREEN, font=("Segoe UI", 8, "bold"),
+                         padx=10, pady=7)
+        badge.pack(side="right", pady=7)
 
-        tk.Label(shell, text="Your AI workspace,\nready on this PC.",
+        tk.Frame(shell, bg=BORDER, height=1).pack(fill="x", pady=(22, 24))
+
+        intro = tk.Frame(shell, bg=BG)
+        intro.pack(fill="x")
+        tk.Label(intro, text="你的工作空間，\n即將就緒。",
                  bg=BG, fg=TEXT, justify="left",
-                 font=("Segoe UI", 27, "bold")).pack(anchor="w")
-        tk.Label(shell, text="Install Kaptia locally. It trains its own small language model from random initialization; no finished model is downloaded.",
-                 bg=BG, fg=MUTED, justify="left",
-                 font=("Segoe UI", 10)).pack(anchor="w", pady=(10, 22))
+                 font=("Segoe UI", 29, "bold"), lineheight=36).pack(anchor="w")
+        tk.Label(
+            intro,
+            text="在自己的電腦上準備 Kaptia。模型從隨機初始化開始訓練，安裝流程不會下載預訓練成品模型。",
+            bg=BG, fg=MUTED, justify="left", wraplength=690,
+            font=("Segoe UI", 10)
+        ).pack(anchor="w", pady=(11, 22))
 
-        card = tk.Frame(shell, bg=PANEL, highlightbackground=BORDER, highlightthickness=1)
+        card = tk.Frame(shell, bg=PANEL, highlightbackground=BORDER,
+                        highlightthickness=1, bd=0)
         card.pack(fill="x")
         inner = tk.Frame(card, bg=PANEL)
-        inner.pack(fill="x", padx=18, pady=18)
+        inner.pack(fill="x", padx=22, pady=20)
 
-        line = tk.Frame(inner, bg=PANEL)
-        line.pack(fill="x")
-        tk.Label(line, text="INSTALLATION STATUS", bg=PANEL, fg=MUTED,
-                 font=("Segoe UI", 8, "bold")).pack(side="left")
-        tk.Label(line, textvariable=self.phase, bg=PANEL, fg=ACCENT,
-                 font=("Segoe UI", 8, "bold")).pack(side="right")
+        topline = tk.Frame(inner, bg=PANEL)
+        topline.pack(fill="x")
+        tk.Label(topline, text="安裝進度", bg=PANEL, fg=MUTED,
+                 font=("Segoe UI", 9, "bold")).pack(side="left")
+        phase_badge = tk.Label(topline, textvariable=self.phase, bg="#202943",
+                               fg=ACCENT, padx=10, pady=4,
+                               font=("Segoe UI", 8, "bold"))
+        phase_badge.pack(side="right")
+
         tk.Label(inner, textvariable=self.status, bg=PANEL, fg=TEXT,
-                 font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x", pady=(13, 5))
+                 font=("Segoe UI", 13, "bold"), anchor="w").pack(fill="x", pady=(17, 6))
         tk.Label(inner, textvariable=self.detail, bg=PANEL, fg=MUTED,
                  font=("Segoe UI", 9), anchor="w", justify="left",
-                 wraplength=590).pack(fill="x", pady=(0, 14))
-        self.progress = ttk.Progressbar(inner, style="Kaptia.Horizontal.TProgressbar",
-                                         mode="determinate", maximum=100, variable=self.percent)
+                 wraplength=650).pack(fill="x", pady=(0, 17))
+
+        self.progress = ttk.Progressbar(
+            inner, style="Kaptia.Horizontal.TProgressbar",
+            mode="determinate", maximum=100, variable=self.percent
+        )
         self.progress.pack(fill="x")
 
+        meta = tk.Frame(inner, bg=PANEL)
+        meta.pack(fill="x", pady=(12, 0))
+        tk.Label(meta, text="本機環境 · Windows 10 / 11",
+                 bg=PANEL, fg="#71809A", font=("Segoe UI", 8)).pack(side="left")
+        tk.Label(meta, text="NO PRETRAINED WEIGHTS",
+                 bg=PANEL, fg="#71809A", font=("Segoe UI", 8, "bold")).pack(side="right")
+
         footer = tk.Frame(shell, bg=BG)
-        footer.pack(fill="x", pady=(20, 0))
-        tk.Label(footer, text="K A P T I A  A I  T E A M",
-                 bg=BG, fg="#657083", font=("Segoe UI", 8)).pack(side="left")
-        self.button = tk.Button(footer, text="Download Kaptia  →", command=self.start,
-                                bg="#FFFFFF", fg="#080808", activebackground="#DADADA",
-                                activeforeground="#080808", relief="flat", bd=0,
-                                padx=22, pady=13, cursor="hand2",
-                                font=("Segoe UI", 10, "bold"))
+        footer.pack(fill="x", pady=(21, 0))
+        tk.Label(footer, text="K A P T I A     ·     LOCAL AI",
+                 bg=BG, fg="#6D7B91", font=("Segoe UI", 8, "bold")).pack(side="left")
+        self.button = tk.Button(
+            footer, text="開始安裝   ↗", command=self.start,
+            bg=ACCENT, fg="#0A0D14", activebackground="#C8D2FF",
+            activeforeground="#0A0D14", relief="flat", bd=0,
+            padx=23, pady=13, cursor="hand2",
+            font=("Segoe UI", 10, "bold")
+        )
         self.button.pack(side="right")
-        self._gradient_bar(shell, 4)
+        self.button.bind("<Enter>", lambda _event: self.button.configure(bg="#C8D2FF"))
+        self.button.bind("<Leave>", lambda _event: self.button.configure(bg=ACCENT))
+        self._gradient_bar(shell, 3)
+        self.after(80, self._animate_accent)
 
-    def _gradient_bar(self, parent, height=4):
-        # Tkinter has no native gradient widget; draw a monochrome horizontal gradient.
-        canvas = tk.Canvas(parent, height=height, bg=BG, highlightthickness=0, bd=0)
-        canvas.pack(fill="x", side="bottom", pady=(18, 0))
-        width = 640
-        for x in range(width):
-            t = x / max(1, width - 1)
-            shade = int(35 + 220 * (1 - abs(2 * t - 1)))
-            color = f"#{shade:02x}{shade:02x}{shade:02x}"
-            canvas.create_line(x, 0, x, height, fill=color)
+    def _paint_background(self, _event=None):
+        # Low-cost ambient glow; no external UI dependencies.
+        self.canvas.delete("ambient")
+        width = max(1, self.winfo_width())
+        for i in range(18):
+            x = width - 110 + i * 14
+            shade = 28 + i * 2
+            color = f"#{shade:02x}{shade + 2:02x}{min(80, shade + 25):02x}"
+            self.canvas.create_oval(
+                x - 150, -190, x + 160, 130,
+                fill=color, outline="", tags="ambient"
+            )
+        self.canvas.lower("ambient")
 
+    def _animate_accent(self):
+        if not self.winfo_exists():
+            return
+        self._gradient_phase = (self._gradient_phase + 1) % 100
+        if hasattr(self, "accent_canvas"):
+            self.accent_canvas.delete("line")
+            width = max(1, self.accent_canvas.winfo_width())
+            for x in range(width):
+                t = ((x / width) + self._gradient_phase / 100) % 1.0
+                strength = int(70 + 120 * (1 - abs(2 * t - 1)))
+                color = f"#{min(255, strength):02x}{min(255, strength + 5):02x}{min(255, strength + 35):02x}"
+                self.accent_canvas.create_line(x, 0, x, 3, fill=color, tags="line")
+        self.after(100, self._animate_accent)
+
+    def _gradient_bar(self, parent, height=3):
+        self.accent_canvas = tk.Canvas(parent, height=height, bg=BG,
+                                       highlightthickness=0, bd=0)
+        self.accent_canvas.pack(fill="x", side="bottom", pady=(18, 0))
     def update_ui(self, status=None, detail=None, phase=None, percent=None, indeterminate=False):
         def apply():
             if status is not None:
