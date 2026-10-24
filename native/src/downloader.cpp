@@ -2,9 +2,7 @@
 
 #include <Windows.h>
 #include <winhttp.h>
-#include <algorithm>
 #include <fstream>
-#include <limits>
 #include <string>
 #include <vector>
 
@@ -64,6 +62,12 @@ DiagnosticResult download_https(std::wstring_view url, const std::filesystem::pa
     }
     WinHttpSetTimeouts(session.value, 15000, 15000, 30000, 30000);
 
+    DWORD redirect_policy = WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS;
+    if (!WinHttpSetOption(session.value, WINHTTP_OPTION_REDIRECT_POLICY, &redirect_policy, sizeof(redirect_policy))) {
+        const DWORD code = GetLastError();
+        log_error(L"WinHttpSetOption(redirect policy)", code);
+    }
+
     InternetHandle connection(WinHttpConnect(session.value, host.c_str(), parts.nPort, 0));
     if (!connection.value) {
         result.native_error = GetLastError();
@@ -72,8 +76,6 @@ DiagnosticResult download_https(std::wstring_view url, const std::filesystem::pa
         return result;
     }
 
-    DWORD redirect_policy = WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS;
-    WinHttpSetOption(session.value, WINHTTP_OPTION_REDIRECT_POLICY, &redirect_policy, sizeof(redirect_policy));
     InternetHandle request(WinHttpOpenRequest(connection.value, L"GET", path.c_str(),
         nullptr, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
         WINHTTP_FLAG_SECURE));
@@ -185,8 +187,9 @@ DiagnosticResult download_https(std::wstring_view url, const std::filesystem::pa
     }
     std::filesystem::rename(partial, destination, ec);
     if (ec) {
-        result.native_error = ec.value();
-        result.message = L"Downloaded data is saved as a partial file but could not be finalized: " + ec.message().c_str();
+        result.native_error = static_cast<unsigned long>(ec.value());
+        result.message = L"Download completed, but the final file could not be moved into place. Filesystem error code: " +
+                         std::to_wstring(result.native_error);
         log_line(result.message);
         return result;
     }
