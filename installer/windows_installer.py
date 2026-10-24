@@ -316,7 +316,7 @@ class Installer(tk.Tk):
                 # Do not waste retries on permanent client errors or our size-limit guard.
                 permanent_http_error = (
                     isinstance(exc, urllib.error.HTTPError)
-                    and exc.code not in (408, 429)
+                    and exc.code not in (403, 408, 429)
                     and not 500 <= exc.code <= 599
                 )
                 permanent_error = (
