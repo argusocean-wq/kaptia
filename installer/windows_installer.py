@@ -216,6 +216,99 @@ class Installer(tk.Tk):
                        "CONNECTING", 0, True)
         threading.Thread(target=self.install, daemon=True).start()
 
+    def _download_source(self):
+        """Download source atomically, retry transient failures, and validate each attempt."""
+        import time
+
+        ROOT.mkdir(parents=True, exist_ok=True)
+        part_path = ZIP_PATH.with_suffix(".zip.part")
+        attempts = 3
+        last_error = None
+
+        for attempt in range(1, attempts + 1):
+            downloaded = 0
+            try:
+                part_path.unlink(missing_ok=True)
+                request = urllib.request.Request(
+                    SOURCE_ZIP,
+                    headers={
+                        "User-Agent": "Kaptia-Installer",
+                        "Accept": "application/zip",
+                        "Cache-Control": "no-cache",
+                    },
+                )
+                self.update_ui(
+                    "下載 Kaptia 原始檔…",
+                    f"正在連線 GitHub（第 {attempt}/{attempts} 次）。",
+                    "DOWNLOAD", 0, True,
+                )
+                with urllib.request.urlopen(request, timeout=30) as response:
+                    status = getattr(response, "status", 200)
+                    if status != 200:
+                        raise RuntimeError(f"GitHub returned HTTP {status}")
+                    total_header = response.headers.get("Content-Length")
+                    total = int(total_header) if total_header and total_header.isdigit() else 0
+                    if total > 1024 * 1024 * 1024:
+                        raise RuntimeError("Source archive exceeds the 1 GiB safety limit.")
+
+                    last_ui_update = 0
+                    with part_path.open("wb") as out:
+                        while True:
+                            chunk = response.read(256 * 1024)
+                            if not chunk:
+                                break
+                            out.write(chunk)
+                            downloaded += len(chunk)
+                            if downloaded > 1024 * 1024 * 1024:
+                                raise RuntimeError("Download exceeded the 1 GiB safety limit.")
+                            now = time.monotonic()
+                            if now - last_ui_update >= 0.25:
+                                if total > 0:
+                                    pct = min(99.0, downloaded * 100 / total)
+                                    detail = f"{downloaded / 1048576:.1f} / {total / 1048576:.1f} MB"
+                                    self.update_ui("下載 Kaptia 原始檔…", detail, "DOWNLOAD", pct, False)
+                                else:
+                                    detail = f"已下載 {downloaded / 1048576:.1f} MB"
+                                    self.update_ui("下載 Kaptia 原始檔…", detail, "DOWNLOAD", None, True)
+                                last_ui_update = now
+                        out.flush()
+                        os.fsync(out.fileno())
+
+                if downloaded == 0:
+                    raise RuntimeError("GitHub returned an empty source archive.")
+                if total > 0 and downloaded != total:
+                    raise RuntimeError(
+                        f"Incomplete download: received {downloaded} bytes, expected {total} bytes."
+                    )
+
+                # Validate before replacing the previous archive or extracting anything.
+                with zipfile.ZipFile(part_path) as archive:
+                    bad_member = archive.testzip()
+                    if bad_member is not None:
+                        raise RuntimeError(f"ZIP integrity check failed at {bad_member}")
+                part_path.replace(ZIP_PATH)
+                self.update_ui(
+                    "下載完成",
+                    f"已接收並驗證 {downloaded / 1048576:.1f} MB 原始檔。",
+                    "DOWNLOAD", 100, False,
+                )
+                return
+            except Exception as exc:
+                last_error = exc
+                part_path.unlink(missing_ok=True)
+                if attempt < attempts:
+                    self.update_ui(
+                        "下載中斷，準備重試…",
+                        f"第 {attempt} 次失敗：{type(exc).__name__}。1.5 秒後重試。",
+                        "RETRY", 0, True,
+                    )
+                    time.sleep(1.5 * attempt)
+
+        raise RuntimeError(
+            f"Unable to download a valid Kaptia source archive after {attempts} attempts: "
+            f"{type(last_error).__name__}: {last_error}"
+        ) from last_error
+
     def _install_vscode_extension(self, app_dir):
         extension_dir = app_dir / "vscode-extension"
         required = ["package.json", "extension.js", "README.md"]
@@ -342,36 +435,14 @@ class Installer(tk.Tk):
     def install(self):
         try:
             ROOT.mkdir(parents=True, exist_ok=True)
-            request = urllib.request.Request(SOURCE_ZIP, headers={"User-Agent": "Kaptia-Installer"})
-            with urllib.request.urlopen(request, timeout=60) as response:
-                total = int(response.headers.get("Content-Length", "0") or 0)
-                downloaded = 0
-                self.update_ui("Downloading Kaptia…", "Downloading application source from GitHub.",
-                               "DOWNLOAD", 0, total <= 0)
-                with ZIP_PATH.open("wb") as out:
-                    while True:
-                        chunk = response.read(1024 * 1024)
-                        if not chunk:
-                            break
-                        out.write(chunk)
-                        downloaded += len(chunk)
-                        if total > 0:
-                            pct = downloaded * 100 / total
-                            self.update_ui(
-                                "Downloading Kaptia…",
-                                f"{downloaded / 1048576:.1f} MB of {total / 1048576:.1f} MB",
-                                "DOWNLOAD", pct, False
-                            )
-                        else:
-                            self.update_ui(
-                                "Downloading Kaptia…",
-                                f"{downloaded / 1048576:.1f} MB downloaded",
-                                "DOWNLOAD", None, True
-                            )
+            self._download_source()
 
-            self.update_ui("Extracting application…", "Checking archive paths before writing files.",
+            self.update_ui("Extracting application…", "Validating ZIP integrity and checking archive paths.",
                            "EXTRACT", 100, True)
             with zipfile.ZipFile(ZIP_PATH) as archive:
+                bad_member = archive.testzip()
+                if bad_member is not None:
+                    raise RuntimeError(f"Downloaded archive failed integrity validation at: {bad_member}")
                 root_resolved = ROOT.resolve()
                 for member in archive.infolist():
                     target = (ROOT / member.filename).resolve()
