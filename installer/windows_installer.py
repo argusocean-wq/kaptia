@@ -310,7 +310,11 @@ class Installer(tk.Tk):
 
             except Exception as exc:
                 last_error = exc
-                part_path.unlink(missing_ok=True)
+                # Cleanup must not hide the original network/ZIP error.
+                try:
+                    part_path.unlink(missing_ok=True)
+                except OSError:
+                    pass
 
                 # Retry network errors, rate limits, server errors and damaged transfers.
                 # Do not waste retries on permanent client errors or our size-limit guard.
@@ -578,11 +582,17 @@ class Installer(tk.Tk):
                              cwd=app_dir, env=child_env,
                              creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0))
         except Exception as exc:
-            self.update_ui("Setup could not finish",
-                           "Check your network connection, available disk space, and Python installation.",
-                           "ERROR", None, False)
+            error_message = f"{type(exc).__name__}: {exc}"
+            self.update_ui(
+                "Setup could not finish",
+                f"Failure details: {error_message}",
+                "ERROR", None, False,
+            )
             self.after(0, self.button.configure, {"state": "normal", "text": "Try again  →"})
-            self.after(0, lambda: messagebox.showerror("Kaptia Setup failed", str(exc)))
+            # Capture the message now; Python clears the exception variable after this block.
+            self.after(0, lambda message=error_message: messagebox.showerror(
+                "Kaptia Setup failed", message
+            ))
 
 
 if __name__ == "__main__":
