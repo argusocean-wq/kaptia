@@ -16,13 +16,15 @@ SOURCE_ZIP = f"https://github.com/{OWNER_REPO}/archive/refs/heads/main.zip"
 ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "Kaptia"
 ZIP_PATH = ROOT / "kaptia-source.zip"
 
-BG = "#080808"
-PANEL = "#151515"
-PANEL_2 = "#242424"
-TEXT = "#FFFFFF"
-MUTED = "#B8B8B8"
-ACCENT = "#FFFFFF"
-BORDER = "#3A3A3A"
+BG = "#090B10"
+PANEL = "#111620"
+PANEL_2 = "#1B2330"
+TEXT = "#F4F7FF"
+MUTED = "#9AA7BC"
+ACCENT = "#A9B9FF"
+BORDER = "#293346"
+ACCENT_2 = "#7C5CFF"
+GREEN = "#77E4C2"
 
 try:
     from build_info import BUILD_NUMBER, BUILD_TAG
@@ -44,84 +46,152 @@ class Installer(tk.Tk):
         self._build_ui()
 
     def _build_ui(self):
+        self.title("Kaptia · 安裝程式")
+        self.geometry("790x600")
+        self.minsize(720, 560)
+        self.configure(bg=BG)
+
+        self.status = tk.StringVar(value="準備好建立你的本機 AI 工作空間")
+        self.detail = tk.StringVar(value="安裝程式將下載 Kaptia、建立獨立環境，並準備本機模型。")
+        self.percent = tk.DoubleVar(value=0)
+        self.phase = tk.StringVar(value="待命")
+        self._gradient_phase = 0
+
         style = ttk.Style(self)
         style.theme_use("clam")
-        style.configure("Kaptia.Horizontal.TProgressbar",
-                        troughcolor=PANEL_2, background="#FFFFFF",
-                        bordercolor=PANEL_2, lightcolor="#FFFFFF", darkcolor="#D8D8D8",
-                        thickness=8)
+        style.configure(
+            "Kaptia.Horizontal.TProgressbar",
+            troughcolor=PANEL_2, background=ACCENT,
+            bordercolor=PANEL_2, lightcolor=ACCENT,
+            darkcolor=ACCENT_2, thickness=7
+        )
+
+        # Ambient background and restrained animated accent.
+        self.canvas = tk.Canvas(self, bg=BG, highlightthickness=0, bd=0)
+        self.canvas.place(relx=0, rely=0, relwidth=1, relheight=1)
+        self.canvas.bind("<Configure>", self._paint_background)
 
         shell = tk.Frame(self, bg=BG)
-        shell.pack(fill="both", expand=True, padx=28, pady=24)
+        shell.pack(fill="both", expand=True, padx=34, pady=26)
 
-        top = tk.Frame(shell, bg=BG)
-        top.pack(fill="x")
-        mark = tk.Frame(top, bg="#FFFFFF", width=42, height=42)
+        header = tk.Frame(shell, bg=BG)
+        header.pack(fill="x")
+
+        mark = tk.Canvas(header, width=46, height=46, bg=BG, highlightthickness=0)
         mark.pack(side="left")
-        mark.pack_propagate(False)
-        tk.Label(mark, text="K", bg="#FFFFFF", fg="#080808",
-                 font=("Segoe UI", 22, "bold")).pack(expand=True)
-        brand = tk.Frame(top, bg=BG)
-        brand.pack(side="left", padx=13)
+        mark.create_oval(3, 3, 43, 43, fill="#1D2940", outline="#647DAD", width=1)
+        mark.create_oval(11, 11, 35, 35, fill="#A9B9FF", outline="")
+        mark.create_oval(18, 8, 29, 19, fill="#F4F7FF", outline="")
+
+        brand = tk.Frame(header, bg=BG)
+        brand.pack(side="left", padx=(13, 0))
         tk.Label(brand, text="K A P T I A", bg=BG, fg=TEXT,
                  font=("Segoe UI", 15, "bold")).pack(anchor="w")
-        tk.Label(brand, text="LOCAL AI WORKSPACE  /  WINDOWS SETUP",
+        tk.Label(brand, text="LOCAL INTELLIGENCE  /  WINDOWS",
                  bg=BG, fg=MUTED, font=("Segoe UI", 8, "bold")).pack(anchor="w", pady=(3, 0))
-        tk.Label(top, text="SETUP  •  01", bg=BG, fg="#FFFFFF",
-                 font=("Segoe UI", 9, "bold")).pack(side="right", pady=10)
 
-        tk.Frame(shell, bg=BORDER, height=1).pack(fill="x", pady=(22, 22))
+        badge = tk.Label(header, text="  SECURE LOCAL SETUP  ", bg="#17231F",
+                         fg=GREEN, font=("Segoe UI", 8, "bold"),
+                         padx=10, pady=7)
+        badge.pack(side="right", pady=7)
 
-        tk.Label(shell, text="Your AI workspace,\nready on this PC.",
+        tk.Frame(shell, bg=BORDER, height=1).pack(fill="x", pady=(22, 24))
+
+        intro = tk.Frame(shell, bg=BG)
+        intro.pack(fill="x")
+        tk.Label(intro, text="你的工作空間，\n即將就緒。",
                  bg=BG, fg=TEXT, justify="left",
-                 font=("Segoe UI", 27, "bold")).pack(anchor="w")
-        tk.Label(shell, text="Install Kaptia locally. It trains its own small language model from random initialization; no finished model is downloaded.",
-                 bg=BG, fg=MUTED, justify="left",
-                 font=("Segoe UI", 10)).pack(anchor="w", pady=(10, 22))
+                 font=("Segoe UI", 29, "bold"), lineheight=36).pack(anchor="w")
+        tk.Label(
+            intro,
+            text="在自己的電腦上準備 Kaptia。模型從隨機初始化開始訓練，安裝流程不會下載預訓練成品模型。",
+            bg=BG, fg=MUTED, justify="left", wraplength=690,
+            font=("Segoe UI", 10)
+        ).pack(anchor="w", pady=(11, 22))
 
-        card = tk.Frame(shell, bg=PANEL, highlightbackground=BORDER, highlightthickness=1)
+        card = tk.Frame(shell, bg=PANEL, highlightbackground=BORDER,
+                        highlightthickness=1, bd=0)
         card.pack(fill="x")
         inner = tk.Frame(card, bg=PANEL)
-        inner.pack(fill="x", padx=18, pady=18)
+        inner.pack(fill="x", padx=22, pady=20)
 
-        line = tk.Frame(inner, bg=PANEL)
-        line.pack(fill="x")
-        tk.Label(line, text="INSTALLATION STATUS", bg=PANEL, fg=MUTED,
-                 font=("Segoe UI", 8, "bold")).pack(side="left")
-        tk.Label(line, textvariable=self.phase, bg=PANEL, fg=ACCENT,
-                 font=("Segoe UI", 8, "bold")).pack(side="right")
+        topline = tk.Frame(inner, bg=PANEL)
+        topline.pack(fill="x")
+        tk.Label(topline, text="安裝進度", bg=PANEL, fg=MUTED,
+                 font=("Segoe UI", 9, "bold")).pack(side="left")
+        phase_badge = tk.Label(topline, textvariable=self.phase, bg="#202943",
+                               fg=ACCENT, padx=10, pady=4,
+                               font=("Segoe UI", 8, "bold"))
+        phase_badge.pack(side="right")
+
         tk.Label(inner, textvariable=self.status, bg=PANEL, fg=TEXT,
-                 font=("Segoe UI", 12, "bold"), anchor="w").pack(fill="x", pady=(13, 5))
+                 font=("Segoe UI", 13, "bold"), anchor="w").pack(fill="x", pady=(17, 6))
         tk.Label(inner, textvariable=self.detail, bg=PANEL, fg=MUTED,
                  font=("Segoe UI", 9), anchor="w", justify="left",
-                 wraplength=590).pack(fill="x", pady=(0, 14))
-        self.progress = ttk.Progressbar(inner, style="Kaptia.Horizontal.TProgressbar",
-                                         mode="determinate", maximum=100, variable=self.percent)
+                 wraplength=650).pack(fill="x", pady=(0, 17))
+
+        self.progress = ttk.Progressbar(
+            inner, style="Kaptia.Horizontal.TProgressbar",
+            mode="determinate", maximum=100, variable=self.percent
+        )
         self.progress.pack(fill="x")
 
+        meta = tk.Frame(inner, bg=PANEL)
+        meta.pack(fill="x", pady=(12, 0))
+        tk.Label(meta, text="本機環境 · Windows 10 / 11",
+                 bg=PANEL, fg="#71809A", font=("Segoe UI", 8)).pack(side="left")
+        tk.Label(meta, text="NO PRETRAINED WEIGHTS",
+                 bg=PANEL, fg="#71809A", font=("Segoe UI", 8, "bold")).pack(side="right")
+
         footer = tk.Frame(shell, bg=BG)
-        footer.pack(fill="x", pady=(20, 0))
-        tk.Label(footer, text="K A P T I A  A I  T E A M",
-                 bg=BG, fg="#657083", font=("Segoe UI", 8)).pack(side="left")
-        self.button = tk.Button(footer, text="Download Kaptia  →", command=self.start,
-                                bg="#FFFFFF", fg="#080808", activebackground="#DADADA",
-                                activeforeground="#080808", relief="flat", bd=0,
-                                padx=22, pady=13, cursor="hand2",
-                                font=("Segoe UI", 10, "bold"))
+        footer.pack(fill="x", pady=(21, 0))
+        tk.Label(footer, text="K A P T I A     ·     LOCAL AI",
+                 bg=BG, fg="#6D7B91", font=("Segoe UI", 8, "bold")).pack(side="left")
+        self.button = tk.Button(
+            footer, text="開始安裝   ↗", command=self.start,
+            bg=ACCENT, fg="#0A0D14", activebackground="#C8D2FF",
+            activeforeground="#0A0D14", relief="flat", bd=0,
+            padx=23, pady=13, cursor="hand2",
+            font=("Segoe UI", 10, "bold")
+        )
         self.button.pack(side="right")
-        self._gradient_bar(shell, 4)
+        self.button.bind("<Enter>", lambda _event: self.button.configure(bg="#C8D2FF"))
+        self.button.bind("<Leave>", lambda _event: self.button.configure(bg=ACCENT))
+        self._gradient_bar(shell, 3)
+        self.after(80, self._animate_accent)
 
-    def _gradient_bar(self, parent, height=4):
-        # Tkinter has no native gradient widget; draw a monochrome horizontal gradient.
-        canvas = tk.Canvas(parent, height=height, bg=BG, highlightthickness=0, bd=0)
-        canvas.pack(fill="x", side="bottom", pady=(18, 0))
-        width = 640
-        for x in range(width):
-            t = x / max(1, width - 1)
-            shade = int(35 + 220 * (1 - abs(2 * t - 1)))
-            color = f"#{shade:02x}{shade:02x}{shade:02x}"
-            canvas.create_line(x, 0, x, height, fill=color)
+    def _paint_background(self, _event=None):
+        # Low-cost ambient glow; no external UI dependencies.
+        self.canvas.delete("ambient")
+        width = max(1, self.winfo_width())
+        for i in range(18):
+            x = width - 110 + i * 14
+            shade = 28 + i * 2
+            color = f"#{shade:02x}{shade + 2:02x}{min(80, shade + 25):02x}"
+            self.canvas.create_oval(
+                x - 150, -190, x + 160, 130,
+                fill=color, outline="", tags="ambient"
+            )
+        self.canvas.lower("ambient")
 
+    def _animate_accent(self):
+        if not self.winfo_exists():
+            return
+        self._gradient_phase = (self._gradient_phase + 1) % 100
+        if hasattr(self, "accent_canvas"):
+            self.accent_canvas.delete("line")
+            width = max(1, self.accent_canvas.winfo_width())
+            for x in range(width):
+                t = ((x / width) + self._gradient_phase / 100) % 1.0
+                strength = int(70 + 120 * (1 - abs(2 * t - 1)))
+                color = f"#{min(255, strength):02x}{min(255, strength + 5):02x}{min(255, strength + 35):02x}"
+                self.accent_canvas.create_line(x, 0, x, 3, fill=color, tags="line")
+        self.after(100, self._animate_accent)
+
+    def _gradient_bar(self, parent, height=3):
+        self.accent_canvas = tk.Canvas(parent, height=height, bg=BG,
+                                       highlightthickness=0, bd=0)
+        self.accent_canvas.pack(fill="x", side="bottom", pady=(18, 0))
     def update_ui(self, status=None, detail=None, phase=None, percent=None, indeterminate=False):
         def apply():
             if status is not None:
@@ -145,6 +215,135 @@ class Installer(tk.Tk):
         self.update_ui("Connecting to GitHub…", "Preparing a verified destination for the application files.",
                        "CONNECTING", 0, True)
         threading.Thread(target=self.install, daemon=True).start()
+
+    def _download_source(self):
+        """Download source safely, switching GitHub endpoints after transient failures."""
+        import time
+        import urllib.error
+
+        ROOT.mkdir(parents=True, exist_ok=True)
+        part_path = ZIP_PATH.with_suffix(".zip.part")
+        # github.com normally redirects to codeload.github.com. Trying both endpoints
+        # avoids treating a redirect/proxy failure as a permanent download failure.
+        source_urls = (
+            SOURCE_ZIP,
+            f"https://codeload.github.com/{OWNER_REPO}/zip/refs/heads/main",
+        )
+        attempts = 4
+        max_bytes = 1024 * 1024 * 1024
+        last_error = None
+
+        for attempt in range(1, attempts + 1):
+            url = source_urls[(attempt - 1) % len(source_urls)]
+            downloaded = 0
+            total = 0
+            try:
+                part_path.unlink(missing_ok=True)
+                request = urllib.request.Request(
+                    url,
+                    headers={
+                        "User-Agent": "Kaptia-Installer/1.0",
+                        "Accept": "application/zip, application/octet-stream;q=0.9, */*;q=0.1",
+                        "Cache-Control": "no-cache",
+                    },
+                )
+                host = url.split("/")[2]
+                self.update_ui(
+                    "正在連線下載 Kaptia…",
+                    f"來源：{host}（第 {attempt}/{attempts} 次）。若連線中斷，會自動切換下載端點。",
+                    "DOWNLOAD", 0, True,
+                )
+                with urllib.request.urlopen(request, timeout=45) as response:
+                    status = getattr(response, "status", 200)
+                    if status != 200:
+                        raise RuntimeError(f"下載伺服器回傳 HTTP {status}")
+                    total_header = response.headers.get("Content-Length")
+                    total = int(total_header) if total_header and total_header.isdigit() else 0
+                    if total > max_bytes:
+                        raise RuntimeError("下載檔案超過 1 GiB 安全限制，已停止。")
+
+                    last_ui_update = 0.0
+                    with part_path.open("wb") as out:
+                        while True:
+                            chunk = response.read(256 * 1024)
+                            if not chunk:
+                                break
+                            out.write(chunk)
+                            downloaded += len(chunk)
+                            if downloaded > max_bytes:
+                                raise RuntimeError("下載檔案超過 1 GiB 安全限制，已停止。")
+                            now = time.monotonic()
+                            if now - last_ui_update >= 0.25:
+                                if total > 0:
+                                    pct = min(99.0, downloaded * 100 / total)
+                                    detail = f"{downloaded / 1048576:.1f} / {total / 1048576:.1f} MB"
+                                    self.update_ui("正在下載 Kaptia 原始檔…", detail, "DOWNLOAD", pct, False)
+                                else:
+                                    self.update_ui(
+                                        "正在下載 Kaptia 原始檔…",
+                                        f"已接收 {downloaded / 1048576:.1f} MB（伺服器未提供總大小）",
+                                        "DOWNLOAD", None, True,
+                                    )
+                                last_ui_update = now
+                        out.flush()
+                        os.fsync(out.fileno())
+
+                if downloaded == 0:
+                    raise RuntimeError("伺服器回傳空檔案。")
+                if total > 0 and downloaded != total:
+                    raise RuntimeError(
+                        f"下載長度不符：收到 {downloaded} bytes，預期 {total} bytes。"
+                    )
+
+                # Never replace the last good archive until the new ZIP is verified.
+                with zipfile.ZipFile(part_path) as archive:
+                    bad_member = archive.testzip()
+                    if bad_member is not None:
+                        raise RuntimeError(f"ZIP 完整性驗證失敗：{bad_member}")
+                part_path.replace(ZIP_PATH)
+                self.update_ui(
+                    "下載完成",
+                    f"已接收並驗證 {downloaded / 1048576:.1f} MB 原始檔。",
+                    "DOWNLOAD", 100, False,
+                )
+                return
+
+            except Exception as exc:
+                last_error = exc
+                # Cleanup must not hide the original network/ZIP error.
+                try:
+                    part_path.unlink(missing_ok=True)
+                except OSError:
+                    pass
+
+                # Retry network errors, rate limits, server errors and damaged transfers.
+                # Do not waste retries on permanent client errors or our size-limit guard.
+                permanent_http_error = (
+                    isinstance(exc, urllib.error.HTTPError)
+                    and exc.code not in (403, 408, 429)
+                    and not 500 <= exc.code <= 599
+                )
+                permanent_error = (
+                    isinstance(exc, RuntimeError)
+                    and "安全限制" in str(exc)
+                )
+                if permanent_http_error or permanent_error:
+                    break
+
+                if attempt < attempts:
+                    next_host = source_urls[attempt % len(source_urls)].split("/")[2]
+                    self.update_ui(
+                        "下載中斷，正在切換來源重試…",
+                        f"{type(exc).__name__}: {str(exc)[:160]}。下一個來源：{next_host}；"
+                        f"剩餘 {attempts - attempt} 次嘗試。",
+                        "RETRY", 0, True,
+                    )
+                    time.sleep(min(2 * attempt, 6))
+
+        raise RuntimeError(
+            f"無法下載有效的 Kaptia 原始檔（已嘗試 {attempt} 次）。"
+            f"最後錯誤：{type(last_error).__name__}: {last_error}"
+        ) from last_error
 
     def _install_vscode_extension(self, app_dir):
         extension_dir = app_dir / "vscode-extension"
@@ -272,36 +471,14 @@ class Installer(tk.Tk):
     def install(self):
         try:
             ROOT.mkdir(parents=True, exist_ok=True)
-            request = urllib.request.Request(SOURCE_ZIP, headers={"User-Agent": "Kaptia-Installer"})
-            with urllib.request.urlopen(request, timeout=60) as response:
-                total = int(response.headers.get("Content-Length", "0") or 0)
-                downloaded = 0
-                self.update_ui("Downloading Kaptia…", "Downloading application source from GitHub.",
-                               "DOWNLOAD", 0, total <= 0)
-                with ZIP_PATH.open("wb") as out:
-                    while True:
-                        chunk = response.read(1024 * 1024)
-                        if not chunk:
-                            break
-                        out.write(chunk)
-                        downloaded += len(chunk)
-                        if total > 0:
-                            pct = downloaded * 100 / total
-                            self.update_ui(
-                                "Downloading Kaptia…",
-                                f"{downloaded / 1048576:.1f} MB of {total / 1048576:.1f} MB",
-                                "DOWNLOAD", pct, False
-                            )
-                        else:
-                            self.update_ui(
-                                "Downloading Kaptia…",
-                                f"{downloaded / 1048576:.1f} MB downloaded",
-                                "DOWNLOAD", None, True
-                            )
+            self._download_source()
 
-            self.update_ui("Extracting application…", "Checking archive paths before writing files.",
+            self.update_ui("Extracting application…", "Validating ZIP integrity and checking archive paths.",
                            "EXTRACT", 100, True)
             with zipfile.ZipFile(ZIP_PATH) as archive:
+                bad_member = archive.testzip()
+                if bad_member is not None:
+                    raise RuntimeError(f"Downloaded archive failed integrity validation at: {bad_member}")
                 root_resolved = ROOT.resolve()
                 for member in archive.infolist():
                     target = (ROOT / member.filename).resolve()
@@ -405,11 +582,17 @@ class Installer(tk.Tk):
                              cwd=app_dir, env=child_env,
                              creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0))
         except Exception as exc:
-            self.update_ui("Setup could not finish",
-                           "Check your network connection, available disk space, and Python installation.",
-                           "ERROR", None, False)
+            error_message = f"{type(exc).__name__}: {exc}"
+            self.update_ui(
+                "Setup could not finish",
+                f"Failure details: {error_message}",
+                "ERROR", None, False,
+            )
             self.after(0, self.button.configure, {"state": "normal", "text": "Try again  →"})
-            self.after(0, lambda: messagebox.showerror("Kaptia Setup failed", str(exc)))
+            # Capture the message now; Python clears the exception variable after this block.
+            self.after(0, lambda message=error_message: messagebox.showerror(
+                "Kaptia Setup failed", message
+            ))
 
 
 if __name__ == "__main__":
