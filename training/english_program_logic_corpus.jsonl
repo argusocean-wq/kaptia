@@ -130,3 +130,135 @@
 {"text":"Backup verification: a backup is useful only if it can be restored. Run periodic restore tests and verify integrity, completeness, and recovery time."}
 {"text":"Failure injection: deliberately simulate timeouts, disk-full errors, process crashes, and malformed responses. Confirm the system reaches a documented recoverable state."}
 {"text":"Acceptance criteria: define observable pass/fail conditions before implementation. Separate checks that ran successfully from checks that were skipped or remain unverified."}
+{"text":"Professional vocabulary - invariant: a condition that must remain true throughout a process or at a defined boundary. Example: after each loop iteration, every processed item is valid."}
+{"text":"Professional vocabulary - precondition: a requirement that must hold before an operation begins. Example: binary search has a precondition that the input is sorted by the comparison order."}
+{"text":"Professional vocabulary - postcondition: a guarantee that must hold after an operation completes successfully. Example: a sorting function returns all original elements in nondecreasing order."}
+{"text":"Professional vocabulary - idempotent: describing an operation whose repeated execution has the same intended effect as one execution. Example: retrying a request with the same idempotency key must not create a second payment."}
+{"text":"Professional vocabulary - deterministic: producing the same output for the same input and relevant state. A deterministic test should not depend on network timing or uncontrolled randomness."}
+{"text":"Professional vocabulary - nondeterministic: allowing multiple possible outcomes under the same apparent input, often due to scheduling, concurrency, or randomness. Identify the source before debugging."}
+{"text":"Professional vocabulary - orthogonal: independent in effect or concern. Two configuration options are orthogonal when changing one does not unexpectedly alter the behavior controlled by the other."}
+{"text":"Professional vocabulary - cohesive: describing a module whose responsibilities strongly belong together. High cohesion makes a component easier to understand, test, and change."}
+{"text":"Professional vocabulary - coupling: the degree to which one component depends on another component's details. Lower unnecessary coupling usually improves changeability and test isolation."}
+{"text":"Professional vocabulary - abstraction: a simplified interface that exposes essential behavior while hiding implementation details. A good abstraction preserves required guarantees rather than merely shortening code."}
+{"text":"Professional vocabulary - encapsulation: keeping internal state behind a controlled interface so callers cannot violate the component's invariants directly."}
+{"text":"Professional vocabulary - polymorphism: allowing different types to be used through a shared interface while each type supplies its own behavior."}
+{"text":"Professional vocabulary - dependency inversion: high-level policy should depend on abstractions, not directly on low-level implementation details. Inject concrete dependencies at a composition boundary."}
+{"text":"Professional vocabulary - separation of concerns: organizing a system so each part addresses a distinct responsibility, such as parsing input separately from authorization and persistence."}
+{"text":"Professional vocabulary - single source of truth: one authoritative representation of a fact. Duplicated writable state can diverge unless consistency rules are explicit."}
+{"text":"Professional vocabulary - canonicalization: converting equivalent representations into one defined form before comparison or validation. Canonicalize paths carefully before checking containment."}
+{"text":"Professional vocabulary - normalization: transforming data into a consistent representation according to a stated rule. Normalization must not erase distinctions that are meaningful to the domain."}
+{"text":"Professional vocabulary - serialization: converting structured data into a storable or transferable representation. A decoder must validate the schema and must not blindly trust external input."}
+{"text":"Professional vocabulary - deserialization: reconstructing structured data from an encoded representation. Treat the input as untrusted and enforce type, size, and version constraints."}
+{"text":"Professional vocabulary - schema: a formal description of valid data structure, field types, constraints, and sometimes versioning rules."}
+{"text":"Professional vocabulary - contract: an explicit statement of permitted inputs, expected outputs, side effects, and failure behavior for a component or API."}
+{"text":"Professional vocabulary - semantic: relating to meaning or behavior rather than only syntax or format. Code can be syntactically valid but semantically incorrect."}
+{"text":"Professional vocabulary - syntactic: relating to the grammar or structure of a language. A parser error is syntactic; a wrong calculation can be semantic."}
+{"text":"Professional vocabulary - idempotency key: a stable identifier used to recognize retries of the same logical request and prevent duplicate side effects."}
+{"text":"Professional vocabulary - race condition: a defect where behavior depends on the timing or interleaving of concurrent operations."}
+{"text":"Professional vocabulary - deadlock: a situation where participants wait indefinitely for resources held by one another. Consistent lock ordering can prevent common deadlocks."}
+{"text":"Professional vocabulary - starvation: a condition where a task waits indefinitely because other tasks continually receive the resources or scheduling opportunities it needs."}
+{"text":"Professional vocabulary - livelock: a condition where components keep reacting to each other but make no useful progress, unlike a deadlock where they are blocked."}
+{"text":"Professional vocabulary - atomicity: the property that an operation appears indivisible with respect to relevant observers. A partial update can violate atomicity."}
+{"text":"Professional vocabulary - consistency: preservation of defined rules or invariants. In distributed systems, consistency can also describe guarantees about which writes readers may observe."}
+{"text":"Professional vocabulary - isolation: the degree to which concurrent operations interfere with one another. Database isolation levels provide different guarantees and trade-offs."}
+{"text":"Professional vocabulary - durability: the guarantee that committed data survives the failures covered by the system's persistence contract."}
+{"text":"Professional vocabulary - transaction: a logical group of operations governed by commit or rollback rules. Identify what must happen together and what recovery is possible."}
+{"text":"Professional vocabulary - eventual consistency: a model where replicas may temporarily differ but converge if updates stop and propagation succeeds. It does not promise immediate read-after-write visibility."}
+{"text":"Professional vocabulary - linearizability: a strong consistency property in which each operation appears to take effect at one instant between its invocation and response."}
+{"text":"Professional vocabulary - throughput: the amount of work completed per unit time. Higher throughput does not necessarily mean lower latency for an individual request."}
+{"text":"Professional vocabulary - latency: the time taken for an operation to complete or respond. Report the measurement boundary and percentile, not only an average."}
+{"text":"Professional vocabulary - tail latency: latency near the slow end of a distribution, such as the 95th or 99th percentile. Rare slow requests can dominate user experience."}
+{"text":"Professional vocabulary - bottleneck: the component or resource that limits overall system performance. Profile representative workloads before optimizing other components."}
+{"text":"Professional vocabulary - scalability: the ability to handle increased load by adding resources or changing design while maintaining required performance and correctness."}
+{"text":"Professional vocabulary - backpressure: a mechanism that limits incoming work when downstream capacity is insufficient, preventing unbounded queues and resource exhaustion."}
+{"text":"Professional vocabulary - bounded: constrained by an explicit maximum, such as queue size, retry count, memory use, input length, or execution time."}
+{"text":"Professional vocabulary - graceful degradation: preserving core functionality when optional dependencies or capacity are unavailable, rather than failing unpredictably."}
+{"text":"Professional vocabulary - fault tolerance: the ability to continue providing specified service despite defined failures. State which failures are covered and which are not."}
+{"text":"Professional vocabulary - resilience: the ability to withstand, recover from, and adapt to failures. Retries alone do not establish resilience if they amplify overload."}
+{"text":"Professional vocabulary - observability: the ability to infer internal system behavior from outputs such as logs, metrics, traces, and structured events."}
+{"text":"Professional vocabulary - telemetry: operational data emitted by a system for monitoring and diagnosis. Avoid collecting secrets or unnecessary personal data."}
+{"text":"Professional vocabulary - correlation ID: an identifier shared across related events or requests so one operation can be traced across components."}
+{"text":"Professional vocabulary - trace: a representation of the path a request follows through components, often containing timed spans for each operation."}
+{"text":"Professional vocabulary - metric: a numerical measurement aggregated over time, such as error rate, queue depth, memory usage, or request latency."}
+{"text":"Professional vocabulary - regression: a change that causes previously correct behavior to fail or worsens an established property. A regression test protects against its recurrence."}
+{"text":"Professional vocabulary - regression test: a test that reproduces a known defect and verifies that a correction prevents the same failure."}
+{"text":"Professional vocabulary - unit test: a test of a small component in isolation, usually with controlled dependencies and a focused assertion."}
+{"text":"Professional vocabulary - integration test: a test that checks interactions between components, such as application code and a database or message queue."}
+{"text":"Professional vocabulary - end-to-end test: a test of a complete user-visible or system workflow across multiple layers and dependencies."}
+{"text":"Professional vocabulary - acceptance criteria: observable conditions that define whether a feature or change meets its intended requirements."}
+{"text":"Professional vocabulary - test oracle: a method or source of truth used to decide whether a test result is correct. A test without a reliable oracle may miss semantic defects."}
+{"text":"Professional vocabulary - boundary value: a value at or near a valid range limit. Boundary tests often expose off-by-one errors and incorrect assumptions."}
+{"text":"Professional vocabulary - equivalence partition: a group of inputs expected to behave similarly under the specification. Test representative values from each valid and invalid partition."}
+{"text":"Professional vocabulary - property-based testing: testing general properties over generated inputs rather than relying only on a fixed list of examples."}
+{"text":"Professional vocabulary - fuzzing: supplying many generated or mutated inputs to discover crashes, hangs, parser defects, or unexpected behavior."}
+{"text":"Professional vocabulary - mutation testing: deliberately changing code and checking whether tests detect the change. Surviving mutations can reveal weak assertions."}
+{"text":"Professional vocabulary - coverage: a measure of which code or behavior was exercised by tests. High coverage alone does not prove correctness."}
+{"text":"Professional vocabulary - false positive: a result incorrectly reported as a match or defect. Review evidence and refine detection criteria to reduce it."}
+{"text":"Professional vocabulary - false negative: a real match or defect that a detection process fails to identify. Improve coverage of relevant cases and edge conditions."}
+{"text":"Professional vocabulary - precision: among reported positive results, the fraction that are actually positive. It measures how noisy a detector's findings are."}
+{"text":"Professional vocabulary - recall: among all actual positive cases, the fraction found by a detector. It measures how many relevant cases are missed."}
+{"text":"Professional vocabulary - overfitting: adapting too closely to training examples so performance on unseen examples is worse. Use held-out evaluation and diverse examples."}
+{"text":"Professional vocabulary - generalization: performance on new examples drawn from the intended task distribution, rather than memorized training examples."}
+{"text":"Professional vocabulary - data leakage: information from evaluation examples improperly influencing training or model selection, making reported performance overly optimistic."}
+{"text":"Professional vocabulary - distribution shift: a difference between the data seen during training or evaluation and the data encountered in actual use."}
+{"text":"Professional vocabulary - ablation study: an experiment that removes or changes one component to estimate its contribution while holding other conditions as constant as possible."}
+{"text":"Professional vocabulary - baseline: a reference result or simple method used to judge whether a more complex approach provides measurable improvement."}
+{"text":"Professional vocabulary - reproducibility: the ability to repeat an experiment under documented conditions and obtain comparable results."}
+{"text":"Professional vocabulary - provenance: information about where data, code, model weights, or artifacts came from and how they were produced."}
+{"text":"Professional vocabulary - checkpoint: a saved snapshot of model parameters and relevant training state that can be evaluated or used to resume training."}
+{"text":"Professional vocabulary - convergence: behavior where optimization approaches a stable solution or metric region. A decreasing training loss does not guarantee useful task performance."}
+{"text":"Professional vocabulary - gradient clipping: limiting gradient magnitude to reduce unstable parameter updates. It does not replace appropriate learning rates or data quality."}
+{"text":"Professional vocabulary - learning rate: the scale of parameter updates during optimization. A rate that is too high may destabilize training; one too low may make progress slow."}
+{"text":"Professional vocabulary - perplexity: an exponential transformation of average token-level negative log-likelihood. It measures predictive uncertainty on a specified dataset, not reasoning ability directly."}
+{"text":"Professional vocabulary - tokenization: mapping text into model input units. Byte-level tokenization treats bytes as units and can represent arbitrary UTF-8 text, but sequences may be long."}
+{"text":"Professional vocabulary - context window: the maximum input sequence the model can condition on in one pass. Longer context increases memory and compute costs."}
+{"text":"Professional vocabulary - inference: using a trained model to produce predictions or generated output, as distinct from updating its parameters during training."}
+{"text":"Professional vocabulary - fine-tuning: further training an existing pretrained model on a narrower dataset. It differs from pretraining a model from random initialization."}
+{"text":"Professional vocabulary - pretraining: initial large-scale training that establishes general statistical patterns before task-specific adaptation. Scratch pretraining requires sufficient data and compute."}
+{"text":"Professional vocabulary - random initialization: starting model parameters from an initialization distribution rather than loading pretrained model weights."}
+{"text":"Professional vocabulary - overparameterization: having more model parameters than are strictly needed to represent a target function. It does not automatically guarantee better generalization."}
+{"text":"Professional vocabulary - quantization: representing model weights or activations with lower numerical precision to reduce memory or improve speed, potentially at some accuracy cost."}
+{"text":"Professional vocabulary - throughput benchmark: a controlled measurement of completed work per unit time. Report hardware, batch size, workload, and warm-up conditions."}
+{"text":"Professional vocabulary - API compatibility: preserving the expectations of existing clients, including field names, types, error behavior, and documented semantics."}
+{"text":"Professional vocabulary - backward compatibility: allowing a newer component to continue supporting relevant behavior expected by older clients or data formats."}
+{"text":"Professional vocabulary - deprecation: a notice that a feature remains available temporarily but should be replaced before planned removal."}
+{"text":"Professional vocabulary - migration: a controlled change to data, schema, infrastructure, or interfaces, including a plan for failure recovery and compatibility."}
+{"text":"Professional vocabulary - rollback: restoring a prior known-good version or state after a failed change. Rollback safety must account for irreversible side effects and data migrations."}
+{"text":"Professional vocabulary - least privilege: granting a component only the permissions required for its task, reducing the impact of compromise or mistakes."}
+{"text":"Professional vocabulary - threat model: a structured description of assets, trust boundaries, adversaries, attack surfaces, and assumptions used to prioritize security controls."}
+{"text":"Professional vocabulary - attack surface: the set of interfaces and inputs through which a system can be reached or influenced by an attacker."}
+{"text":"Professional vocabulary - defense in depth: using multiple independent security controls so one failure does not automatically defeat the whole protection strategy."}
+{"text":"Professional vocabulary - fail closed: denying an operation when a required security check or dependency cannot be completed safely."}
+{"text":"Professional vocabulary - trust boundary: a point where data or control crosses between components with different trust assumptions and must be validated or authorized."}
+{"text":"Professional vocabulary - sanitization: transforming input to remove or neutralize content unsafe for a particular context. It is context-specific and does not replace validation."}
+{"text":"Professional vocabulary - validation versus sanitization: validation decides whether input meets a contract; sanitization transforms input for a specific safe use. They solve different problems."}
+{"text":"Professional vocabulary - exploitability: how practically and reliably a defect can be used to cause harm under stated attacker capabilities and environmental conditions."}
+{"text":"Professional vocabulary - severity versus priority: severity estimates impact; priority describes urgency of fixing. A severe issue may have different priority depending on exposure and context."}
+{"text":"Professional vocabulary - root cause: the underlying condition that produced a failure. A useful fix addresses the cause rather than hiding the visible symptom."}
+{"text":"Professional vocabulary - hypothesis: a testable explanation for an observed result. A disciplined debugging process changes one factor at a time when practical."}
+{"text":"Professional vocabulary - trade-off: a choice where improving one property can worsen another, such as latency versus consistency or memory use versus computation."}
+{"text":"Professional vocabulary - heuristic: a practical rule that often works but does not guarantee an optimal or correct result in every case."}
+{"text":"Professional vocabulary - invariant violation: a state where a condition required by the design no longer holds. Identify the operation that first made the condition false."}
+{"text":"Professional vocabulary - failover: switching to a backup component or path after a failure. Confirm that the alternate path is healthy and does not duplicate side effects."}
+{"text":"Professional vocabulary - circuit breaker: a mechanism that temporarily stops calls to a failing dependency to limit cascading failures and allow recovery."}
+{"text":"Professional vocabulary - exponential backoff: increasing the wait between retries by a multiplicative factor, usually with a cap and jitter to avoid synchronized retry storms."}
+{"text":"Professional vocabulary - jitter: a random variation added to timing or backoff so many clients do not retry or reconnect simultaneously."}
+{"text":"Professional vocabulary - lease: a time-limited grant of ownership or permission that expires unless renewed. Define behavior when clocks, renewal, or network access fail."}
+{"text":"Professional vocabulary - quorum: a minimum number of participants or replicas whose agreement or response is required for an operation under a specified protocol."}
+{"text":"Professional vocabulary - eventual completion versus safety: liveness asks whether progress eventually occurs; safety asks whether forbidden states are never reached."}
+{"text":"Professional vocabulary - semantic versioning: a versioning convention where major, minor, and patch increments communicate breaking changes, compatible features, and compatible fixes."}
+{"text":"Professional vocabulary - technical debt: future maintenance cost created by shortcuts or design choices. Track the impact and conditions under which repayment is justified."}
+{"text":"Professional vocabulary - refactoring: changing internal structure without intentionally changing externally observable behavior. Use tests to detect accidental behavior changes."}
+{"text":"Professional vocabulary - code smell: a pattern suggesting possible design problems that deserves investigation but is not, by itself, proof of a defect."}
+{"text":"Professional vocabulary - static analysis: examining code without executing it to find potential defects, unsafe patterns, or violations of declared rules."}
+{"text":"Professional vocabulary - dynamic analysis: examining program behavior during execution, such as memory use, race conditions, runtime errors, or performance."}
+{"text":"Professional vocabulary - type safety: preventing operations that are invalid for the declared or inferred types. Runtime validation may still be needed for external data."}
+{"text":"Professional vocabulary - referential transparency: an expression can be replaced by its value without changing program behavior, assuming the same inputs and no hidden side effects."}
+{"text":"Professional vocabulary - side effect: an observable change beyond returning a value, such as writing a file, updating a database, sending a request, or modifying shared state."}
+{"text":"Professional vocabulary - pure function: a function whose result depends only on its inputs and which has no observable side effects. Pure functions are often easier to test and reason about."}
+{"text":"Professional vocabulary - memoization: caching a function result for a key derived from its inputs. Correctness requires the key to include every input that affects the result."}
+{"text":"Professional vocabulary - amortized complexity: average cost per operation over a sequence, even when some individual operations are expensive. State the operation sequence and assumptions."}
+{"text":"Professional vocabulary - asymptotic complexity: how resource use grows with input size, abstracting away constant factors and lower-order terms."}
+{"text":"Professional vocabulary - upper bound: a limit that an actual quantity does not exceed under stated assumptions. Big O notation expresses an asymptotic upper bound."}
+{"text":"Professional vocabulary - lower bound: a limit that an actual quantity is at least as large as under stated assumptions. Big Omega notation expresses an asymptotic lower bound."}
+{"text":"Professional vocabulary - tight bound: an asymptotic characterization that matches both an upper and lower bound up to constant factors. Big Theta notation is used for this purpose."}
