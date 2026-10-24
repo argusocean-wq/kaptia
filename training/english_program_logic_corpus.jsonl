@@ -38,3 +38,95 @@
 {"text":"Data leakage check: split training and evaluation data by source document or logical example before chunking. Near-duplicate paragraphs across splits can inflate scores. Keep the test set fixed and inspect similarity as well as exact hashes."}
 {"text":"Training diagnosis: falling training loss with rising held-out loss can indicate overfitting, distribution mismatch, or an unrepresentative validation set. Compare data quality, split policy, learning rate, and model capacity before increasing training steps."}
 {"text":"Algorithm correctness proof: state preconditions, postconditions, and loop invariants. Explain why initialization establishes the invariant, each iteration preserves it, and termination plus the invariant implies the result. Examples do not replace the argument."}
+{"text":"Null handling: distinguish a missing value from a valid false, zero, or empty string. Use an explicit sentinel or type check when the domain permits falsy values. Test each valid boundary value."}
+{"text":"Off-by-one review: for an array of length n, valid indexes are 0 through n minus 1. A loop using i <= n accesses one element beyond the end. Test n equal to zero and one."}
+{"text":"Mutable default argument: in Python, a list default is created once and shared across calls. Use None as the default and create a new list inside the function. Test two independent calls."}
+{"text":"Resource safety: acquire a file or lock inside a context manager or try/finally block. Every successful acquisition must have a cleanup path, including exceptions and early returns."}
+{"text":"Transaction reasoning: validate all preconditions before committing irreversible state. If multiple writes must succeed together, use a transaction or compensating action. Test failure after each intermediate write."}
+{"text":"Concurrency race: a check followed by a write is not atomic when another thread can change the state between them. Use a lock, atomic compare-and-swap, or database constraint appropriate to the invariant."}
+{"text":"Idempotency: an operation is idempotent when repeating it has the same intended effect as performing it once. Assign a stable request key and persist the outcome so retries do not duplicate payments or jobs."}
+{"text":"Retry policy: retry only transient failures, use bounded exponential backoff with jitter, and set a total deadline. Do not retry invalid input or permission failures without changing the cause."}
+{"text":"Timeout design: set explicit connection and operation timeouts. A timeout means the caller stopped waiting, not necessarily that the remote operation failed. Use idempotency keys before retrying uncertain writes."}
+{"text":"Input validation: validate type, length, range, encoding, and allowed values at the trust boundary. Reject malformed input before it mutates state. Validation must match the actual domain contract."}
+{"text":"Authorization review: authentication establishes who the caller is; authorization checks what that caller may do to this resource. Check permission on every sensitive operation, not only in the user interface."}
+{"text":"Path traversal: joining a user-controlled filename to a base directory is unsafe without normalization and containment checks. Resolve the final path and verify it remains under the permitted root."}
+{"text":"SQL safety: never concatenate untrusted values into SQL syntax. Use parameterized queries for values and an allowlist for identifiers that cannot be parameterized."}
+{"text":"Complexity comparison: O(n log n) generally grows more slowly than O(n squared) for large n, but constant factors and input sizes matter. State the asymptotic assumption and benchmark realistic data."}
+{"text":"Hash map reasoning: average lookup is O(1), but worst-case behavior depends on collisions and implementation. Do not claim constant worst-case time without a supporting guarantee."}
+{"text":"Graph traversal: breadth-first search finds shortest paths in an unweighted graph when each vertex is marked visited at the right time. Test cycles, disconnected vertices, and duplicate edges."}
+{"text":"Depth-first search: use a visited set to prevent repeated exploration in cyclic graphs. For very deep inputs, an explicit stack may avoid call-stack overflow."}
+{"text":"Topological sorting: a directed acyclic graph admits a topological order. If Kahn's algorithm processes fewer vertices than exist, the remaining dependency graph contains a cycle."}
+{"text":"Binary search precondition: the input must be sorted according to the same ordering used by the comparison. Without that precondition, discarding half the range is not justified."}
+{"text":"Sorting stability: a stable sort preserves the relative order of records whose keys compare equal. Stability matters when a later sort is intended to preserve a prior ordering."}
+{"text":"Loop invariant proof: state what is true before each iteration, show initialization establishes it, show each iteration preserves it, and show the invariant plus termination implies the result."}
+{"text":"Function contract: document preconditions, postconditions, and invariants. A function is not correct merely because it returns a value; the result must satisfy its stated contract for every permitted input."}
+{"text":"Test design: use equivalence classes and boundary values, then add regression cases for every discovered defect. A passing happy path does not establish correctness for malformed or adversarial inputs."}
+{"text":"Property-based testing: express a general property, generate many inputs, and shrink failures to a minimal counterexample. Example: sorting should preserve the multiset of input elements and produce nondecreasing output."}
+{"text":"Metamorphic testing: when the exact output is hard to know, test relations between outputs. For example, sorting a list twice should equal sorting it once, and reversing twice should restore the original list."}
+{"text":"Regression isolation: first reproduce a failure, then minimize the input while preserving it. A minimal counterexample helps distinguish the root cause from unrelated symptoms."}
+{"text":"Error handling: catch an exception only when the code can recover, add useful context, or translate it at a defined boundary. Avoid broad catches that silently convert defects into success."}
+{"text":"Observability: logs should identify the operation, correlation ID, outcome, and relevant safe context. Do not log credentials, access tokens, or sensitive personal data."}
+{"text":"Cache correctness: a cache key must include every input that can change the result. Missing dimensions create false cache hits; stale invalidation rules create behavior that differs from the source of truth."}
+{"text":"Cache stampede: when many callers request one expired key, coordinate refresh or use bounded stale-while-revalidate behavior. Avoid allowing every caller to perform the same expensive computation."}
+{"text":"Distributed consistency: a successful local write does not prove every replica has observed it. State the consistency model and design read-after-write behavior according to the requirement."}
+{"text":"Message delivery: at-least-once delivery permits duplicates. Consumers should be idempotent or deduplicate by a stable message identifier before applying side effects."}
+{"text":"Ordering: sequence numbers can detect missing or reordered messages, but the receiver must define how to buffer, reject, or recover. Never assume network arrival order without a guarantee."}
+{"text":"Finite-state validation: list legal states and transitions, then reject transitions not in the model. Tests should cover every allowed transition and representative forbidden transitions."}
+{"text":"API compatibility: adding an optional response field is often backward compatible, while changing a field's type or meaning may break clients. Test old clients against new responses."}
+{"text":"Semantic versioning: a breaking public API change requires a major version under conventional semantic versioning. Bug fixes that do not change the contract usually increment the patch version."}
+{"text":"Data leakage: split examples by source document or entity when related samples could reveal the same content across train and validation. Random line-level splits can overstate generalization."}
+{"text":"Evaluation discipline: keep a fixed held-out set and a separate challenge set of unseen tasks. Report the exact dataset, metric, model checkpoint, and decoding settings."}
+{"text":"Language model loss: lower next-token loss indicates better prediction on the evaluated distribution, not necessarily correct reasoning or safe behavior. Evaluate task outcomes separately."}
+{"text":"Generated-code review: inspect syntax, edge cases, error paths, security boundaries, and dependency assumptions. A successful parse or smoke test does not prove semantic correctness."}
+{"text":"Minimal patch strategy: identify the root cause and make the smallest change that restores the contract. Add a regression test before broad refactoring."}
+{"text":"Performance profiling: measure before optimizing. Identify the dominant cost with a profiler, define a representative workload, and compare results after each targeted change."}
+{"text":"Memory complexity: track both peak memory and total allocation. Streaming a large input can reduce memory from O(n) to O(1) auxiliary space when the algorithm does not retain prior elements."}
+{"text":"Numerical stability: floating-point values have finite precision. Avoid exact equality for computed real values when tolerance-based comparison matches the domain requirements."}
+{"text":"Integer overflow: determine the numeric range of intermediate calculations, not only the final result. Use checked arithmetic or a wider representation when inputs can exceed bounds."}
+{"text":"Unicode correctness: user-visible characters do not always correspond one-to-one with bytes or code points. Choose byte, code-point, or grapheme operations according to the requirement."}
+{"text":"Security boundary: escaping output is context-specific. HTML text, HTML attributes, JavaScript strings, URLs, and SQL values require different handling; one generic escaping function is not universal."}
+{"text":"File upload validation: do not trust a client-provided extension or content type alone. Enforce size limits, validate content, generate server-side names, and store files outside executable paths."}
+{"text":"Least privilege: grant each component only the permissions required for its task. Reduce blast radius by separating read access, write access, and administrative actions."}
+{"text":"Secret management: keep API keys out of source control, logs, client bundles, and test fixtures. Rotate exposed credentials and use a secret store or environment injection appropriate to the deployment."}
+{"text":"Dependency risk: pin and review dependencies, check their provenance, and run vulnerability scanning. A successful installation does not establish that a package is trustworthy."}
+{"text":"Build reproducibility: record dependency versions, compiler or interpreter version, build flags, and source revision. Reproducible builds make failures easier to investigate."}
+{"text":"Feature flags: a flag should have a defined owner, default, rollback behavior, and removal plan. Test both enabled and disabled paths where both are supported."}
+{"text":"Rollback planning: deploy changes so the previous version can be restored safely. Database migrations should consider compatibility between old and new application versions."}
+{"text":"Configuration validation: parse configuration once at startup and fail clearly when required values are absent or contradictory. Avoid silently substituting insecure defaults."}
+{"text":"Deadlock reasoning: a cycle in a wait-for graph can indicate deadlock. Prevent it by imposing a consistent lock order, reducing lock scope, or using timeout-aware acquisition."}
+{"text":"Lock granularity: a global lock is simple but limits concurrency. Narrow locks only after identifying shared invariants and proving that operations remain safe."}
+{"text":"Producer-consumer queue: define capacity, backpressure, shutdown, and error propagation. An unbounded queue can turn a temporary slowdown into memory exhaustion."}
+{"text":"Backpressure: when downstream processing is slower than input, slow producers, reject work, or buffer within a bound. Unlimited buffering is not a reliable scaling strategy."}
+{"text":"Resource exhaustion: bound request size, recursion depth, queue length, concurrency, and execution time at appropriate boundaries. Limits should be explicit and tested."}
+{"text":"Algorithm selection: choose a data structure from the operations that dominate the workload. Explain the trade-off in lookup, insertion, deletion, ordering, and memory."}
+{"text":"Code review severity: classify findings by impact and exploitability. Describe the triggering condition, consequence, evidence, and a concrete correction; avoid vague claims."}
+{"text":"Review uncertainty: distinguish confirmed defects from hypotheses. If the contract or runtime behavior is unknown, state what evidence or test would resolve the uncertainty."}
+{"text":"Bug report quality: include expected behavior, actual behavior, minimal reproduction, environment, and logs with secrets removed. This makes the report actionable."}
+{"text":"Test oracle: define what correct output means before running the test. A test that merely repeats the implementation's assumptions may confirm the same bug."}
+{"text":"Mutation testing: intentionally alter a condition or return value and verify that tests fail. Surviving mutations reveal gaps in the test suite."}
+{"text":"Boundary matrix: for a numeric parameter, test below minimum, exactly minimum, typical value, exactly maximum, and above maximum. Also test invalid types if the API accepts untrusted input."}
+{"text":"State consistency: if two fields must change together, represent the update as one atomic operation or derive one field from the other. Partial updates can violate the invariant."}
+{"text":"Event sourcing: append immutable events and derive current state through a projection. Define event schema evolution and replay behavior before relying on historical events."}
+{"text":"Temporal logic: safety means something bad never happens; liveness means something good eventually happens. Tests and monitors should distinguish these properties."}
+{"text":"Protocol parsing: reject truncated, oversized, malformed, or out-of-order frames according to the protocol contract. Never assume the network delivers a complete message in one read."}
+{"text":"Framing: TCP provides a byte stream, not message boundaries. Use a length prefix, delimiter with escaping, or another explicit framing rule and handle partial reads."}
+{"text":"Compression safety: enforce decompressed size and nesting limits when processing untrusted compressed data. Small compressed inputs can expand into excessive resource use."}
+{"text":"Serialization: validate schema version and field types when decoding external data. Do not deserialize untrusted objects with mechanisms that can execute arbitrary code."}
+{"text":"Authentication flow: bind a verified identity to the session and expire credentials according to policy. A user interface state alone is not proof of authentication."}
+{"text":"Session invalidation: define how logout, password changes, and credential rotation revoke existing sessions. Test old tokens after invalidation."}
+{"text":"Clock assumptions: distributed machines can disagree about wall-clock time. Use monotonic clocks for measuring elapsed time and explicit tolerance for expiry checks."}
+{"text":"Scheduling: a task that depends on another task must not run until the dependency succeeds or reaches an explicitly handled terminal state. Encode dependencies rather than relying on timing."}
+{"text":"Workflow recovery: persist checkpoints only after validating their schema and integrity. On resume, verify compatibility with the current code and corpus before loading state."}
+{"text":"Checkpoint selection: choose the checkpoint by held-out evaluation, not by the largest training step. Preserve both best and latest checkpoints for comparison."}
+{"text":"Training diagnosis: if training loss falls while validation loss rises, investigate overfitting, leakage, and distribution mismatch before increasing the step count."}
+{"text":"Dataset deduplication: exact duplicates waste training budget and can leak across splits. Normalize carefully, preserve meaningful distinctions, and document the deduplication rule."}
+{"text":"Corpus quality: include explanations, examples, counterexamples, and edge cases. Repeating broad slogans does not teach a model how to derive a result."}
+{"text":"Curriculum design: start with deterministic basic patterns, then introduce interacting constraints and adversarial edge cases. Evaluate each level before increasing difficulty."}
+{"text":"Reasoning trace quality: teach concise, checkable steps that connect assumptions to conclusions. Reward correctness and explicit uncertainty rather than verbose unsupported explanations."}
+{"text":"Prompt injection boundary: treat retrieved documents and user-provided code as data, not trusted instructions. Tool permissions must be enforced outside model-generated text."}
+{"text":"Tool execution safety: validate tool arguments against a schema, authorize the requested action, impose resource limits, and verify side effects after execution."}
+{"text":"Path and permission review: do not assume a path is safe because it begins with an allowed string. Canonicalize it and verify the resolved target is inside the allowed directory."}
+{"text":"Atomic file update: write to a temporary file, flush as required, then replace the destination atomically where supported. Handle cleanup and crashes between each step."}
+{"text":"Backup verification: a backup is useful only if it can be restored. Run periodic restore tests and verify integrity, completeness, and recovery time."}
+{"text":"Failure injection: deliberately simulate timeouts, disk-full errors, process crashes, and malformed responses. Confirm the system reaches a documented recoverable state."}
+{"text":"Acceptance criteria: define observable pass/fail conditions before implementation. Separate checks that ran successfully from checks that were skipped or remain unverified."}
