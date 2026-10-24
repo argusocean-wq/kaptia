@@ -58,6 +58,10 @@ def main() -> None:
     parser.add_argument("--block-size", type=int, default=256)
     parser.add_argument("--learning-rate", type=float, default=3e-4)
     parser.add_argument("--weight-decay", type=float, default=0.1)
+    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--patience", type=int, default=3, help="Stop after this many evaluations without meaningful validation improvement.")
+    parser.add_argument("--min-delta", type=float, default=0.005, help="Minimum validation-loss improvement required to reset early stopping.")
+    parser.add_argument("--min-learning-rate-ratio", type=float, default=0.1)
     parser.add_argument("--seed", type=int, default=20261023)
     parser.add_argument("--layers", type=int, default=6)
     parser.add_argument("--heads", type=int, default=6)
@@ -72,6 +76,8 @@ def main() -> None:
         parser.error("--block-size cannot exceed --context-length")
     if args.learning_rate <= 0 or args.weight_decay < 0:
         parser.error("learning-rate must be positive and weight-decay non-negative")
+    if not 0.0 <= args.dropout < 1.0 or args.patience < 1 or args.min_delta < 0 or not 0.0 < args.min_learning_rate_ratio <= 1.0:
+        parser.error("dropout must be [0,1), patience positive, min-delta non-negative, and min-learning-rate-ratio in (0,1]")
     if args.device == "cuda" and not torch.cuda.is_available():
         parser.error("--device cuda requested but CUDA is unavailable")
 
@@ -88,7 +94,7 @@ def main() -> None:
         "train_sha256": hashlib.sha256(train_path.read_bytes()).hexdigest(),
         "validation_sha256": hashlib.sha256(val_path.read_bytes()).hexdigest(),
     }
-    config = ScratchConfig(layers=args.layers, heads=args.heads, width=args.width, context_length=args.context_length)
+    config = ScratchConfig(layers=args.layers, heads=args.heads, width=args.width, context_length=args.context_length, dropout=args.dropout)
     config.validate()
     model = KaptiaScratchLM(config).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
@@ -102,10 +108,14 @@ def main() -> None:
         if checkpoint.get("initialization") != "random" or checkpoint.get("pretrained_source") is not None:
             parser.error("Refusing checkpoint: expected random initialization and no pretrained source.")
         saved_config = checkpoint.get("config", {})
-        if any(saved_config.get(key) != value for key, value in config.__dict__.items()):
+        # Dropout changes training regularization only and adds no parameters, so it may be tuned on resume.
+        if any(saved_config.get(key) != value for key, value in config.__dict__.items() if key != "dropout"):
             parser.error("Checkpoint architecture config does not match requested model config.")
         model.load_state_dict(checkpoint["model_state_dict"], strict=True)
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        # Respect the explicitly requested learning rate instead of silently restoring an old LR.
+        for param_group in optimizer.param_groups:
+            param_group["lr"] = args.learning_rate
         start_step = int(checkpoint.get("step", 0))
         best_val = float(checkpoint.get("best_validation_loss", checkpoint.get("metrics", {}).get("validation", {}).get("loss", float("inf"))))
         saved_fingerprint = checkpoint.get("corpus_fingerprint")
@@ -124,8 +134,10 @@ def main() -> None:
         if device.type == "cuda" and checkpoint.get("cuda_rng_state_all") is not None:
             torch.cuda.set_rng_state_all(checkpoint["cuda_rng_state_all"])
         print(f"[INFO] Resuming random-init training at step {start_step}; RNG state restored when available; no pretrained weights loaded.")
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, args.steps), eta_min=args.learning_rate * args.min_learning_rate_ratio)
     log_path = args.output_dir / "training_log.jsonl"
     started = time.time()
+    evaluations_without_improvement = 0
     print(f"[INFO] Device: {device}; parameters: {sum(p.numel() for p in model.parameters()):,}")
     print(f"[INFO] Train tokens(bytes): {train_data.numel():,}; validation tokens(bytes): {val_data.numel():,}")
     print("[INFO] Model starts with random weights; no pretrained checkpoint is loaded.")
@@ -141,13 +153,21 @@ def main() -> None:
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
+            scheduler.step()
 
             if step == 1 or step % args.eval_interval == 0 or step == start_step + args.steps:
                 metrics = estimate_loss(model, train_data, val_data, args.batch_size, args.block_size, device, args.eval_batches)
-                record = {"step": step, "elapsed_seconds": round(time.time() - started, 2), **metrics}
+                record = {"step": step, "elapsed_seconds": round(time.time() - started, 2), "learning_rate": optimizer.param_groups[0]["lr"], **metrics}
                 log.write(json.dumps(record, ensure_ascii=False) + "\n")
                 log.flush()
                 print(f"[step {step} total; segment {step - start_step}/{args.steps}] train_loss={metrics['train']['loss']:.4f} val_loss={metrics['validation']['loss']:.4f} val_ppl={metrics['validation']['perplexity']:.2f}")
+                validation_loss = metrics["validation"]["loss"]
+                improved = validation_loss < best_val - args.min_delta
+                if improved:
+                    best_val = validation_loss
+                    evaluations_without_improvement = 0
+                else:
+                    evaluations_without_improvement += 1
                 checkpoint = {
                     "config": config.__dict__,
                     "model_state_dict": model.state_dict(),
@@ -165,9 +185,29 @@ def main() -> None:
                     "cuda_rng_state_all": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
                 }
                 torch.save(checkpoint, args.output_dir / "latest_checkpoint.pt")
-                if metrics["validation"]["loss"] < best_val:
-                    best_val = metrics["validation"]["loss"]
+                if improved:
                     torch.save(checkpoint, args.output_dir / "best_checkpoint.pt")
+                    print(f"[INFO] New best validation loss: {best_val:.4f}")
+                (args.output_dir / "manifest.json").write_text(json.dumps({
+                    "status": "TRAINING_COMPLETED" if step == start_step + args.steps else "TRAINING_IN_PROGRESS",
+                    "initialization": "random",
+                    "pretrained_source": None,
+                    "step": step,
+                    "requested_steps": start_step + args.steps,
+                    "steps_this_run": args.steps,
+                    "best_validation_loss": best_val,
+                    "evaluations_without_improvement": evaluations_without_improvement,
+                    "patience": args.patience,
+                    "dropout": args.dropout,
+                    "learning_rate": optimizer.param_groups[0]["lr"],
+                    "device": str(device),
+                    "corpus_dir": str(args.data_dir),
+                    "corpus_fingerprint": corpus_fingerprint,
+                    "log": str(log_path),
+                }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                if evaluations_without_improvement >= args.patience:
+                    print(f"[EARLY STOP] Validation loss did not improve by at least {args.min_delta} for {args.patience} evaluations.")
+                    break
                 (args.output_dir / "manifest.json").write_text(json.dumps({
                     "status": "TRAINING_COMPLETED" if step == start_step + args.steps else "TRAINING_IN_PROGRESS",
                     "initialization": "random",
