@@ -14,7 +14,9 @@ a{color:inherit}.wrap{width:min(1040px,calc(100% - 36px));margin:auto}.top{heigh
 h1{font-size:clamp(42px,8vw,78px);letter-spacing:-.065em;line-height:1.05;margin:0;font-weight:550}.lead{color:#b6b6b6;max-width:650px;margin:22px auto 30px;font-size:clamp(16px,2vw,19px)}
 .actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;border-radius:12px;text-decoration:none;font-weight:650;border:1px solid #eee;background:#f5f5f5;color:#080808}.btn.secondary{background:#141414;color:#eee;border-color:#393939}.note{font-size:12px;color:#888;margin-top:15px}
 section{padding:48px 0;border-top:1px solid #242424}.eyebrow{font-size:11px;letter-spacing:.2em;color:#929292;text-transform:uppercase}h2{font-size:clamp(25px,4vw,36px);letter-spacing:-.035em;font-weight:550;margin:8px 0 22px}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.card{border:1px solid var(--line);background:#101010a8;border-radius:16px;padding:20px}.num{color:#777;font-size:12px;letter-spacing:.12em}.card h3{font-size:16px;margin:12px 0 7px}.card p,.copy{font-size:14px;color:#aaa;margin:0}.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.step{border-top:1px solid #555;padding-top:16px}.step strong{display:block;margin:8px 0}.requirements{display:grid;grid-template-columns:1fr 1fr;gap:12px}.req{padding:18px;border-radius:14px;background:#111;border:1px solid #282828}.req strong{display:block;margin-bottom:5px}.footer{padding:30px 0 45px;color:#777;font-size:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.footer a{color:#aaa}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.card{border:1px solid var(--line);background:#101010a8;border-radius:16px;padding:20px}.num{color:#777;font-size:12px;letter-spacing:.12em}.card h3{font-size:16px;margin:12px 0 7px}.card p,.copy{font-size:14px;color:#aaa;margin:0}.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.release-list{display:grid;grid-template-columns:1fr;gap:12px}.release-card{border:1px solid var(--line);background:linear-gradient(135deg,#141414,#0d0d0d);border-radius:16px;padding:20px}.release-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}.release-title{font-size:17px;font-weight:650;margin:0}.release-meta{color:#888;font-size:12px;margin-top:4px}.release-badge{font-size:11px;border:1px solid #454545;color:#ccc;padding:3px 8px;border-radius:99px}.release-notes{font-size:14px;color:#b5b5b5;white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0 0;max-height:180px;overflow:auto}.release-links{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:13px}.release-links a{color:#f5f5f5;text-underline-offset:4px}.release-status{font-size:14px;color:#aaa;margin:0}.release-footnote{font-size:12px;color:#777;margin-top:14px}
+.step{border-top:1px solid #555;padding-top:16px}.step strong{display:block;margin:8px 0}.requirements{display:grid;grid-template-columns:1fr 1fr;gap:12px}.req{padding:18px;border-radius:14px;background:#111;border:1px solid #282828}.req strong{display:block;margin-bottom:5px}.footer{padding:30px 0 45px;color:#777;font-size:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.footer a{color:#aaa}
 @media(max-width:700px){.grid,.steps,.requirements{grid-template-columns:1fr}.hero{padding-top:70px}.top{height:64px}.wrap{width:min(100% - 28px,1040px)}}
 </style>
 </head>
@@ -32,6 +34,12 @@ section{padding:48px 0;border-top:1px solid #242424}.eyebrow{font-size:11px;lett
 <a class="btn secondary" href="https://github.com/argusocean-wq/kaptia" target="_blank" rel="noopener">查看 GitHub 專案 ↗</a>
 </div>
 <p class="note" id="downloadNote">Windows 10/11 · 初次設定需要網路與數 GB 儲存空間。安裝程式由 GitHub Actions 建置並發布；首次啟動會從隨機初始化訓練 <span class="notranslate" translate="no">Kaptia</span> 起步模型，不會下載成品模型。</p>
+</section>
+<section id="release-announcements" aria-labelledby="release-title">
+<div class="eyebrow">RELEASE NOTES</div><h2 id="release-title">版本發布公告</h2>
+<p class="copy">公告直接讀取 Kaptia GitHub Releases，顯示正式發布的版本、日期、更新說明及可用下載。若無法連線，仍可開啟 Releases 頁面查看。</p>
+<div class="release-list" id="releaseList" aria-live="polite"><article class="release-card"><p class="release-status">正在讀取 GitHub Releases 最新公告…</p></article></div>
+<p class="release-footnote">版本公告由 GitHub Releases 提供；頁面顯示公告不代表該版本已在所有 Windows 裝置完成實機驗證。</p>
 </section>
 <section>
 <div class="eyebrow">OVERVIEW</div><h2>網站只負責介紹與下載</h2>
@@ -61,4 +69,92 @@ section{padding:48px 0;border-top:1px solid #242424}.eyebrow{font-size:11px;lett
 </main>
 <footer class="footer"><span>© <span class="notranslate" translate="no">Kaptia</span> · Windows local assistant</span><span><a href="https://github.com/argusocean-wq/kaptia">Source code</a> · <a href="https://github.com/argusocean-wq/kaptia/releases">Releases</a></span></footer>
 </div>
+<script>
+(() => {
+  const list = document.getElementById("releaseList");
+  const releasesUrl = "https://api.github.com/repos/argusocean-wq/kaptia/releases?per_page=5";
+  const releasesPage = "https://github.com/argusocean-wq/kaptia/releases";
+
+  function node(tag, className, text) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    if (text !== undefined) el.textContent = text;
+    return el;
+  }
+  function addLink(parent, label, url) {
+    if (typeof url !== "string" || !url.startsWith("https://github.com/argusocean-wq/kaptia/releases/")) return;
+    const a = node("a", "", label);
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    parent.appendChild(a);
+  }
+  function formatDate(value) {
+    if (!value) return "發布日期未提供";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "發布日期未提供";
+    return new Intl.DateTimeFormat("zh-TW", {
+      timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit"
+    }).format(date);
+  }
+  function renderRelease(release) {
+    const card = node("article", "release-card");
+    const head = node("div", "release-head");
+    const info = node("div");
+    const title = node("h3", "release-title", release.name || release.tag_name || "Kaptia 版本");
+    title.classList.add("notranslate");
+    title.setAttribute("translate", "no");
+    info.appendChild(title);
+    const version = node("div", "release-meta", (release.tag_name || "版本標籤未提供") + " · " + formatDate(release.published_at));
+    version.classList.add("notranslate");
+    version.setAttribute("translate", "no");
+    info.appendChild(version);
+    head.appendChild(info);
+    if (release.prerelease) head.appendChild(node("span", "release-badge", "預覽版"));
+    else head.appendChild(node("span", "release-badge", "正式發布"));
+    card.appendChild(head);
+    if (release.body && release.body.trim()) {
+      const notes = node("p", "release-notes", release.body.trim());
+      card.appendChild(notes);
+    } else {
+      card.appendChild(node("p", "release-notes", "此版本尚未提供更新說明。"));
+    }
+    const links = node("div", "release-links");
+    addLink(links, "查看完整發布公告 ↗", release.html_url);
+    const asset = Array.isArray(release.assets) ? release.assets.find(item => item.name === "Kaptia-Setup.exe") : null;
+    if (asset) addLink(links, "下載此版本安裝程式 ↓", asset.browser_download_url);
+    card.appendChild(links);
+    return card;
+  }
+  async function loadReleases() {
+    try {
+      const response = await fetch(releasesUrl, {
+        headers: { "Accept": "application/vnd.github+json" },
+        cache: "no-store"
+      });
+      if (!response.ok) throw new Error("GitHub API HTTP " + response.status);
+      const data = await response.json();
+      if (!Array.isArray(data)) throw new Error("GitHub API response was not a release list");
+      const published = data.filter(item => item && !item.draft && item.published_at);
+      list.replaceChildren();
+      if (!published.length) {
+        list.appendChild(node("article", "release-card", ""));
+        list.firstElementChild.appendChild(node("p", "release-status", "目前沒有可顯示的已發布版本。"));
+      } else {
+        published.slice(0, 5).forEach(release => list.appendChild(renderRelease(release)));
+      }
+    } catch (error) {
+      list.replaceChildren();
+      const card = node("article", "release-card");
+      card.appendChild(node("p", "release-status", "暫時無法載入版本公告。請直接開啟 GitHub Releases 查看最新版本。"));
+      const links = node("div", "release-links");
+      addLink(links, "開啟所有版本公告 ↗", releasesPage);
+      card.appendChild(links);
+      list.appendChild(card);
+    }
+  }
+  loadReleases();
+})();
+</script>
+
 </body></html>
