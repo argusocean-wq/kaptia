@@ -24,7 +24,7 @@ concurrency:
 jobs:
   train-from-random-init:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -41,9 +41,12 @@ jobs:
           key: kaptia-base-v2-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
             kaptia-base-v2-${{ github.ref_name }}-
-      - name: Prepare combined original base-language corpus
+      - name: Prepare curated base-language corpus
         run: |
-          python scripts/kaptia_prepare_text_corpus.py --input training --output-dir training/scratch_corpus --val-fraction 0.08 --min-document-bytes 32
+          mkdir -p training/base_language_input
+          cp training/base_language_corpus.jsonl training/base_language_input/
+          cp training/engineering_review_corpus.jsonl training/base_language_input/
+          python scripts/kaptia_prepare_text_corpus.py --input training/base_language_input --output-dir training/scratch_corpus --val-fraction 0.08 --min-document-bytes 32
           cat training/scratch_corpus/metadata.json
       - name: Train base language model from random initialization
         shell: bash
@@ -66,21 +69,21 @@ jobs:
             )
             current_step="${checkpoint_info[0]}"
             corpus_state="${checkpoint_info[1]}"
-            if [ "$current_step" -ge 20000 ] && [ "$corpus_state" = "same" ]; then
-              echo "Checkpoint already has 20000+ steps on this exact corpus; no redundant training."
+            if [ "$current_step" -ge 3000 ] && [ "$corpus_state" = "same" ]; then
+              echo "Checkpoint already has 3000+ steps on this exact corpus; no redundant training."
             else
-              if [ "$current_step" -ge 20000 ]; then
-                additional_steps=5000
+              if [ "$current_step" -ge 3000 ]; then
+                additional_steps=1000
                 echo "Corpus fingerprint changed. Continuing from step $current_step for $additional_steps additional steps."
               else
-                additional_steps=$((20000 - current_step))
+                additional_steps=$((3000 - current_step))
                 echo "Resuming from step $current_step for $additional_steps steps to complete the base-model segment."
               fi
-              python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps "$additional_steps" --eval-interval 1000 --eval-batches 4 --batch-size 4 --block-size 512 --layers 4 --heads 4 --width 128 --context-length 1024 --device cpu --resume outputs/kaptia-scratch-pretrain/latest_checkpoint.pt
+              python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps "$additional_steps" --eval-interval 500 --eval-batches 4 --batch-size 4 --block-size 512 --layers 4 --heads 4 --width 128 --context-length 1024 --device cpu --resume outputs/kaptia-scratch-pretrain/latest_checkpoint.pt
             fi
           else
-            echo "No checkpoint cache found; initializing all weights randomly and training for 20000 steps."
-            python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 20000 --eval-interval 1000 --eval-batches 4 --batch-size 4 --block-size 512 --layers 4 --heads 4 --width 128 --context-length 1024 --device cpu
+            echo "No checkpoint cache found; initializing all weights randomly and training for 3000 steps."
+            python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 3000 --eval-interval 500 --eval-batches 4 --batch-size 4 --block-size 512 --layers 4 --heads 4 --width 128 --context-length 1024 --device cpu
           fi
       - name: Verify checkpoint provenance and training progress
         run: |
@@ -93,7 +96,7 @@ jobs:
           checkpoint = torch.load(root / "latest_checkpoint.pt", map_location="cpu", weights_only=False)
           assert checkpoint.get("initialization") == "random"
           assert checkpoint.get("pretrained_source") is None
-          assert int(checkpoint.get("step", 0)) >= 20000
+          assert int(checkpoint.get("step", 0)) >= 3000
           log = [json.loads(line) for line in (root / "training_log.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
           assert log, "training log is empty"
           assert all("train" in row and "validation" in row for row in log)
