@@ -5,6 +5,7 @@ on:
     branches: ["premium-installer-ui"]
     paths:
       - "installer/**"
+      - "tests/**"
       - ".github/workflows/validate-windows-installer.yml"
   pull_request:
     branches: ["main"]
