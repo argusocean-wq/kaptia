@@ -1,6 +1,11 @@
 name: Validate Windows installer PR
 
 on:
+  push:
+    branches: ["premium-installer-ui"]
+    paths:
+      - "installer/**"
+      - ".github/workflows/validate-windows-installer.yml"
   pull_request:
     branches: ["main"]
     paths:
