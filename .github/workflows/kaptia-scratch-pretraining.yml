@@ -11,6 +11,7 @@ on:
       - "training/bootstrap_dialogue_seed.jsonl"
       - "training/engineering_review_corpus.jsonl"
       - "training/base_language_corpus.jsonl"
+      - "training/phase2_language_corpus.jsonl"
       - ".github/workflows/kaptia-scratch-pretraining.yml"
   workflow_dispatch:
 
@@ -46,7 +47,7 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          paths = [Path('training/base_language_corpus.jsonl'), Path('training/engineering_review_corpus.jsonl')]
+          paths = [Path('training/base_language_corpus.jsonl'), Path('training/engineering_review_corpus.jsonl'), Path('training/phase2_language_corpus.jsonl')]
           total = 0
           for path in paths:
               count = 0
@@ -68,6 +69,7 @@ jobs:
           mkdir -p training/base_language_input
           cp training/base_language_corpus.jsonl training/base_language_input/
           cp training/engineering_review_corpus.jsonl training/base_language_input/
+          cp training/phase2_language_corpus.jsonl training/base_language_input/
           python scripts/kaptia_prepare_text_corpus.py --input training/base_language_input --output-dir training/scratch_corpus --val-fraction 0.08 --min-document-bytes 32
           cat training/scratch_corpus/metadata.json
       - name: Train base language model from random initialization
