@@ -1,0 +1,115 @@
+name: Kaptia English program logic training
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "training/english_program_logic_corpus.jsonl"
+      - ".github/workflows/kaptia-english-logic-training.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kaptia-english-logic-training
+  cancel-in-progress: true
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU PyTorch
+        run: python -m pip install --upgrade pip torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Restore previous Kaptia checkpoint
+        uses: actions/cache/restore@v4
+        with:
+          path: outputs/kaptia-scratch-pretrain
+          key: kaptia-base-v2-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            kaptia-base-v2-${{ github.ref_name }}-
+      - name: Validate English corpus
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("training/english_program_logic_corpus.jsonl")
+          rows = [json.loads(line) for line in p.read_text(encoding="utf-8").splitlines() if line.strip()]
+          assert len(rows) >= 30
+          assert all(isinstance(row.get("text"), str) and row["text"].isascii() and len(row["text"]) >= 80 for row in rows)
+          print(f"[PASS] {len(rows)} English logic documents")
+          PY
+      - name: Prepare held-out English corpus
+        run: |
+          mkdir -p training/english_logic_input
+          cp training/english_program_logic_corpus.jsonl training/english_logic_input/
+          python scripts/kaptia_prepare_text_corpus.py --input training/english_logic_input --output-dir training/english_logic_corpus --val-fraction 0.20 --min-document-bytes 80
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          src = Path("training/english_logic_corpus")
+          out = Path("training/scratch_corpus")
+          out.mkdir(parents=True, exist_ok=True)
+          train = src.joinpath("train.bin").read_bytes()
+          val = src.joinpath("val.bin").read_bytes()
+          out.joinpath("train.bin").write_bytes(train)
+          out.joinpath("val.bin").write_bytes(val)
+          meta = {
+              "corpus_language": "English only",
+              "training_focus": "program logic, algorithms, debugging, code review, testing, systems reasoning",
+              "validation_policy": "held-out English source documents",
+              "train_bytes": len(train),
+              "validation_bytes": len(val),
+              "train_sha256": hashlib.sha256(train).hexdigest(),
+              "validation_sha256": hashlib.sha256(val).hexdigest(),
+          }
+          out.joinpath("metadata.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+          print(json.dumps(meta, indent=2))
+          PY
+      - name: Continue scratch training
+        shell: bash
+        run: |
+          if [ -f outputs/kaptia-scratch-pretrain/latest_checkpoint.pt ]; then
+            python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 1000 --eval-interval 100 --eval-batches 8 --batch-size 4 --block-size 512 --layers 4 --heads 4 --width 128 --context-length 1024 --learning-rate 0.00005 --dropout 0.1 --patience 4 --min-delta 0.003 --device cpu --resume outputs/kaptia-scratch-pretrain/latest_checkpoint.pt
+          else
+            echo "No prior checkpoint cache available; initializing from random weights."
+            python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 3000 --eval-interval 100 --eval-batches 8 --batch-size 4 --block-size 512 --layers 4 --heads 4 --width 128 --context-length 1024 --learning-rate 0.00005 --dropout 0.1 --patience 4 --min-delta 0.003 --device cpu
+          fi
+      - name: Verify provenance and checkpoints
+        run: |
+          python - <<'PY'
+          import json, torch
+          from pathlib import Path
+          root = Path("outputs/kaptia-scratch-pretrain")
+          latest = torch.load(root / "latest_checkpoint.pt", map_location="cpu", weights_only=False)
+          best = torch.load(root / "best_checkpoint.pt", map_location="cpu", weights_only=False)
+          assert latest.get("initialization") == "random" and latest.get("pretrained_source") is None
+          assert best.get("initialization") == "random" and best.get("pretrained_source") is None
+          assert latest["step"] > 0 and best["step"] > 0
+          print(json.dumps({"status":"scratch_training_verified","step":latest["step"],"best_checkpoint_step":best["step"],"latest_metrics":latest.get("metrics"),"best_metrics":best.get("metrics")}, indent=2))
+          PY
+      - name: Verify chat smoke test
+        env:
+          KAPTIA_SCRATCH_CHECKPOINT: outputs/kaptia-scratch-pretrain/best_checkpoint.pt
+          KAPTIA_SHOW_EXPERIMENTAL_GENERATION: "1"
+        run: printf 'Explain a loop invariant in one sentence.\n/exit\n' | python scripts/chat.py
+      - uses: actions/cache/save@v4
+        with:
+          path: outputs/kaptia-scratch-pretrain
+          key: kaptia-base-v2-${{ github.ref_name }}-${{ github.run_id }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kaptia-english-logic-${{ github.run_number }}
+          path: |
+            outputs/kaptia-scratch-pretrain/latest_checkpoint.pt
+            outputs/kaptia-scratch-pretrain/best_checkpoint.pt
+            outputs/kaptia-scratch-pretrain/manifest.json
+            outputs/kaptia-scratch-pretrain/training_log.jsonl
+            training/scratch_corpus/metadata.json
+          if-no-files-found: error
+          retention-days: 30
