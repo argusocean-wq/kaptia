@@ -189,7 +189,7 @@ def main() -> None:
                     torch.save(checkpoint, args.output_dir / "best_checkpoint.pt")
                     print(f"[INFO] New best validation loss: {best_val:.4f}")
                 (args.output_dir / "manifest.json").write_text(json.dumps({
-                    "status": "TRAINING_COMPLETED" if step == start_step + args.steps else "TRAINING_IN_PROGRESS",
+                    "status": "TRAINING_COMPLETED" if step == start_step + args.steps else ("EARLY_STOPPED" if evaluations_without_improvement >= args.patience else "TRAINING_IN_PROGRESS"),
                     "initialization": "random",
                     "pretrained_source": None,
                     "step": step,
