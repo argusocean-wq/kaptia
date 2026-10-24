@@ -217,41 +217,52 @@ class Installer(tk.Tk):
         threading.Thread(target=self.install, daemon=True).start()
 
     def _download_source(self):
-        """Download source atomically, retry transient failures, and validate each attempt."""
+        """Download source safely, switching GitHub endpoints after transient failures."""
         import time
+        import urllib.error
 
         ROOT.mkdir(parents=True, exist_ok=True)
         part_path = ZIP_PATH.with_suffix(".zip.part")
-        attempts = 3
+        # github.com normally redirects to codeload.github.com. Trying both endpoints
+        # avoids treating a redirect/proxy failure as a permanent download failure.
+        source_urls = (
+            SOURCE_ZIP,
+            f"https://codeload.github.com/{OWNER_REPO}/zip/refs/heads/main",
+        )
+        attempts = 4
+        max_bytes = 1024 * 1024 * 1024
         last_error = None
 
         for attempt in range(1, attempts + 1):
+            url = source_urls[(attempt - 1) % len(source_urls)]
             downloaded = 0
+            total = 0
             try:
                 part_path.unlink(missing_ok=True)
                 request = urllib.request.Request(
-                    SOURCE_ZIP,
+                    url,
                     headers={
-                        "User-Agent": "Kaptia-Installer",
-                        "Accept": "application/zip",
+                        "User-Agent": "Kaptia-Installer/1.0",
+                        "Accept": "application/zip, application/octet-stream;q=0.9, */*;q=0.1",
                         "Cache-Control": "no-cache",
                     },
                 )
+                host = url.split("/")[2]
                 self.update_ui(
-                    "下載 Kaptia 原始檔…",
-                    f"正在連線 GitHub（第 {attempt}/{attempts} 次）。",
+                    "正在連線下載 Kaptia…",
+                    f"來源：{host}（第 {attempt}/{attempts} 次）。若連線中斷，會自動切換下載端點。",
                     "DOWNLOAD", 0, True,
                 )
-                with urllib.request.urlopen(request, timeout=30) as response:
+                with urllib.request.urlopen(request, timeout=45) as response:
                     status = getattr(response, "status", 200)
                     if status != 200:
-                        raise RuntimeError(f"GitHub returned HTTP {status}")
+                        raise RuntimeError(f"下載伺服器回傳 HTTP {status}")
                     total_header = response.headers.get("Content-Length")
                     total = int(total_header) if total_header and total_header.isdigit() else 0
-                    if total > 1024 * 1024 * 1024:
-                        raise RuntimeError("Source archive exceeds the 1 GiB safety limit.")
+                    if total > max_bytes:
+                        raise RuntimeError("下載檔案超過 1 GiB 安全限制，已停止。")
 
-                    last_ui_update = 0
+                    last_ui_update = 0.0
                     with part_path.open("wb") as out:
                         while True:
                             chunk = response.read(256 * 1024)
@@ -259,33 +270,36 @@ class Installer(tk.Tk):
                                 break
                             out.write(chunk)
                             downloaded += len(chunk)
-                            if downloaded > 1024 * 1024 * 1024:
-                                raise RuntimeError("Download exceeded the 1 GiB safety limit.")
+                            if downloaded > max_bytes:
+                                raise RuntimeError("下載檔案超過 1 GiB 安全限制，已停止。")
                             now = time.monotonic()
                             if now - last_ui_update >= 0.25:
                                 if total > 0:
                                     pct = min(99.0, downloaded * 100 / total)
                                     detail = f"{downloaded / 1048576:.1f} / {total / 1048576:.1f} MB"
-                                    self.update_ui("下載 Kaptia 原始檔…", detail, "DOWNLOAD", pct, False)
+                                    self.update_ui("正在下載 Kaptia 原始檔…", detail, "DOWNLOAD", pct, False)
                                 else:
-                                    detail = f"已下載 {downloaded / 1048576:.1f} MB"
-                                    self.update_ui("下載 Kaptia 原始檔…", detail, "DOWNLOAD", None, True)
+                                    self.update_ui(
+                                        "正在下載 Kaptia 原始檔…",
+                                        f"已接收 {downloaded / 1048576:.1f} MB（伺服器未提供總大小）",
+                                        "DOWNLOAD", None, True,
+                                    )
                                 last_ui_update = now
                         out.flush()
                         os.fsync(out.fileno())
 
                 if downloaded == 0:
-                    raise RuntimeError("GitHub returned an empty source archive.")
+                    raise RuntimeError("伺服器回傳空檔案。")
                 if total > 0 and downloaded != total:
                     raise RuntimeError(
-                        f"Incomplete download: received {downloaded} bytes, expected {total} bytes."
+                        f"下載長度不符：收到 {downloaded} bytes，預期 {total} bytes。"
                     )
 
-                # Validate before replacing the previous archive or extracting anything.
+                # Never replace the last good archive until the new ZIP is verified.
                 with zipfile.ZipFile(part_path) as archive:
                     bad_member = archive.testzip()
                     if bad_member is not None:
-                        raise RuntimeError(f"ZIP integrity check failed at {bad_member}")
+                        raise RuntimeError(f"ZIP 完整性驗證失敗：{bad_member}")
                 part_path.replace(ZIP_PATH)
                 self.update_ui(
                     "下載完成",
@@ -293,20 +307,38 @@ class Installer(tk.Tk):
                     "DOWNLOAD", 100, False,
                 )
                 return
+
             except Exception as exc:
                 last_error = exc
                 part_path.unlink(missing_ok=True)
+
+                # Retry network errors, rate limits, server errors and damaged transfers.
+                # Do not waste retries on permanent client errors or our size-limit guard.
+                permanent_http_error = (
+                    isinstance(exc, urllib.error.HTTPError)
+                    and exc.code not in (408, 429)
+                    and not 500 <= exc.code <= 599
+                )
+                permanent_error = (
+                    isinstance(exc, RuntimeError)
+                    and "安全限制" in str(exc)
+                )
+                if permanent_http_error or permanent_error:
+                    break
+
                 if attempt < attempts:
+                    next_host = source_urls[attempt % len(source_urls)].split("/")[2]
                     self.update_ui(
-                        "下載中斷，準備重試…",
-                        f"第 {attempt} 次失敗：{type(exc).__name__}: {str(exc)[:180]}。稍後自動重試。",
+                        "下載中斷，正在切換來源重試…",
+                        f"{type(exc).__name__}: {str(exc)[:160]}。下一個來源：{next_host}；"
+                        f"剩餘 {attempts - attempt} 次嘗試。",
                         "RETRY", 0, True,
                     )
-                    time.sleep(1.5 * attempt)
+                    time.sleep(min(2 * attempt, 6))
 
         raise RuntimeError(
-            f"Unable to download a valid Kaptia source archive after {attempts} attempts: "
-            f"{type(last_error).__name__}: {last_error}"
+            f"無法下載有效的 Kaptia 原始檔（已嘗試 {attempt} 次）。"
+            f"最後錯誤：{type(last_error).__name__}: {last_error}"
         ) from last_error
 
     def _install_vscode_extension(self, app_dir):
