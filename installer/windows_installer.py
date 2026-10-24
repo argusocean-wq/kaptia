@@ -299,7 +299,7 @@ class Installer(tk.Tk):
                 if attempt < attempts:
                     self.update_ui(
                         "下載中斷，準備重試…",
-                        f"第 {attempt} 次失敗：{type(exc).__name__}。1.5 秒後重試。",
+                        f"第 {attempt} 次失敗：{type(exc).__name__}: {str(exc)[:180]}。稍後自動重試。",
                         "RETRY", 0, True,
                     )
                     time.sleep(1.5 * attempt)
