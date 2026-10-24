@@ -1,0 +1,31 @@
+name: Validate Windows installer PR
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "installer/**"
+      - ".github/workflows/validate-windows-installer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check Python syntax
+        run: python -m py_compile installer/windows_installer.py
+      - name: Install PyInstaller
+        run: python -m pip install --upgrade pyinstaller
+      - name: Build executable without publishing a release
+        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name Kaptia-Setup installer/windows_installer.py
+      - name: Verify executable exists
+        run: python -c "from pathlib import Path; p=Path('dist/Kaptia-Setup.exe'); assert p.is_file() and p.stat().st_size > 0, 'Installer executable was not created'; print(f'EXE bytes: {p.stat().st_size}')"
