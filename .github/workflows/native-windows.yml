@@ -1,0 +1,27 @@
+name: Native C++ Windows build
+
+on:
+  push:
+    branches: ["cxx-native-rewrite"]
+    paths:
+      - "native/**"
+      - ".github/workflows/native-windows.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "native/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure CMake
+        run: cmake -S native -B build/native -A x64
+      - name: Compile Release
+        run: cmake --build build/native --config Release --parallel
