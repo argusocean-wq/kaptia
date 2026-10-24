@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "training/english_program_logic_corpus.jsonl"
+      - "training/evaluation/english_program_logic_eval.jsonl"
       - ".github/workflows/kaptia-english-logic-training.yml"
   workflow_dispatch:
 
@@ -98,6 +99,41 @@ jobs:
           KAPTIA_SCRATCH_CHECKPOINT: outputs/kaptia-scratch-pretrain/best_checkpoint.pt
           KAPTIA_SHOW_EXPERIMENTAL_GENERATION: "1"
         run: printf 'Explain a loop invariant in one sentence.\n/exit\n' | python scripts/chat.py
+      - name: Evaluate held-out program logic questions
+        env:
+          KAPTIA_SCRATCH_CHECKPOINT: outputs/kaptia-scratch-pretrain/best_checkpoint.pt
+          KAPTIA_SHOW_EXPERIMENTAL_GENERATION: "1"
+        run: |
+          mkdir -p outputs/evaluation
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.chat import load_language_engine, build_generator
+          dataset = Path("training/evaluation/english_program_logic_eval.jsonl")
+          cases = [json.loads(line) for line in dataset.read_text(encoding="utf-8").splitlines() if line.strip()]
+          assert len(cases) >= 10, f"Expected at least 10 cases, got {len(cases)}"
+          ids = [case["id"] for case in cases]
+          assert len(ids) == len(set(ids)), "Duplicate evaluation IDs"
+          tokenizer, model = load_language_engine()
+          generate = build_generator(tokenizer, model)
+          output = Path("outputs/evaluation/program_logic_results.jsonl")
+          with output.open("w", encoding="utf-8") as stream:
+              for index, case in enumerate(cases, 1):
+                  try:
+                      answer = generate([{"role": "user", "content": case["prompt"]}], max_new_tokens=180, temperature=0.2)
+                      status, error = "generated", None
+                  except Exception as exc:
+                      answer, status, error = "", "generation_error", f"{type(exc).__name__}: {exc}"
+                  record = {
+                      "id": case["id"], "category": case["category"], "difficulty": case["difficulty"],
+                      "prompt": case["prompt"], "reference_expectations": case["expected"],
+                      "rubric": case["rubric"], "model_output": answer, "status": status,
+                      "error": error, "human_score": None, "notes": ""
+                  }
+                  stream.write(json.dumps(record, ensure_ascii=False) + "\\n")
+                  print(f"[EVAL {index}/{len(cases)}] {case['id']} status={status} output_chars={len(answer)}")
+          print(f"Saved {len(cases)} raw model outputs to {output}; correctness scores intentionally unset.")
+          PY
       - uses: actions/cache/save@v4
         with:
           path: outputs/kaptia-scratch-pretrain
@@ -110,6 +146,7 @@ jobs:
             outputs/kaptia-scratch-pretrain/best_checkpoint.pt
             outputs/kaptia-scratch-pretrain/manifest.json
             outputs/kaptia-scratch-pretrain/training_log.jsonl
+            outputs/evaluation/program_logic_results.jsonl
             training/scratch_corpus/metadata.json
           if-no-files-found: error
           retention-days: 30
