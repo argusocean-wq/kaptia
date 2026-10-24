@@ -64,14 +64,39 @@ jobs:
           assert total >= 80, f'Expected at least 80 curated documents; found {total}'
           print(f'[PASS] Total curated documents: {total}')
           PY
-      - name: Prepare curated base-language corpus
+      - name: Prepare leakage-resistant phase-two validation corpus
         run: |
-          mkdir -p training/base_language_input
+          mkdir -p training/base_language_input training/phase2_language_input
           cp training/base_language_corpus.jsonl training/base_language_input/
           cp training/engineering_review_corpus.jsonl training/base_language_input/
-          cp training/phase2_language_corpus.jsonl training/base_language_input/
-          python scripts/kaptia_prepare_text_corpus.py --input training/base_language_input --output-dir training/scratch_corpus --val-fraction 0.08 --min-document-bytes 32
-          cat training/scratch_corpus/metadata.json
+          cp training/phase2_language_corpus.jsonl training/phase2_language_input/
+          # Validation must only contain documents unseen by the resumed checkpoint.
+          python scripts/kaptia_prepare_text_corpus.py --input training/base_language_input --output-dir training/base_corpus --val-fraction 0.08 --min-document-bytes 32
+          python scripts/kaptia_prepare_text_corpus.py --input training/phase2_language_input --output-dir training/phase2_corpus --val-fraction 0.20 --min-document-bytes 32
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          base = Path("training/base_corpus")
+          phase2 = Path("training/phase2_corpus")
+          out = Path("training/scratch_corpus")
+          out.mkdir(parents=True, exist_ok=True)
+          train = base.joinpath("train.bin").read_bytes() + b"\n\n" + base.joinpath("val.bin").read_bytes() + b"\n\n" + phase2.joinpath("train.bin").read_bytes()
+          val = phase2.joinpath("val.bin").read_bytes()
+          (out / "train.bin").write_bytes(train)
+          (out / "val.bin").write_bytes(val)
+          metadata = {
+              "format": "raw UTF-8 bytes; each byte is a token ID 0..255",
+              "validation_policy": "held-out documents from phase-two corpus only; no re-splitting of prior corpus",
+              "base_metadata": json.loads(base.joinpath("metadata.json").read_text(encoding="utf-8")),
+              "phase2_metadata": json.loads(phase2.joinpath("metadata.json").read_text(encoding="utf-8")),
+              "train_bytes": len(train),
+              "validation_bytes": len(val),
+              "train_sha256": hashlib.sha256(train).hexdigest(),
+              "validation_sha256": hashlib.sha256(val).hexdigest(),
+          }
+          (out / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print(json.dumps({k: metadata[k] for k in ("validation_policy", "train_bytes", "validation_bytes", "train_sha256", "validation_sha256")}, ensure_ascii=False, indent=2))
+          PY
       - name: Train base language model from random initialization
         shell: bash
         run: |
@@ -103,11 +128,11 @@ jobs:
                 additional_steps=$((3000 - current_step))
                 echo "Resuming from step $current_step for $additional_steps steps to complete the base-model segment."
               fi
-              python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps "$additional_steps" --eval-interval 500 --eval-batches 4 --batch-size 4 --block-size 512 --layers 4 --heads 4 --width 128 --context-length 1024 --device cpu --resume outputs/kaptia-scratch-pretrain/latest_checkpoint.pt
+              python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps "$additional_steps" --eval-interval 200 --eval-batches 8 --batch-size 4 --block-size 512 --layers 4 --heads 4 --width 128 --context-length 1024 --learning-rate 0.0001 --dropout 0.1 --patience 3 --min-delta 0.005 --device cpu --resume outputs/kaptia-scratch-pretrain/latest_checkpoint.pt
             fi
           else
             echo "No checkpoint cache found; initializing all weights randomly and training for 3000 steps."
-            python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 3000 --eval-interval 500 --eval-batches 4 --batch-size 4 --block-size 512 --layers 4 --heads 4 --width 128 --context-length 1024 --device cpu
+            python scripts/train_kaptia_scratch.py --data-dir training/scratch_corpus --output-dir outputs/kaptia-scratch-pretrain --steps 3000 --eval-interval 200 --eval-batches 8 --batch-size 4 --block-size 512 --layers 4 --heads 4 --width 128 --context-length 1024 --learning-rate 0.0001 --dropout 0.1 --patience 3 --min-delta 0.005 --device cpu
           fi
       - name: Verify checkpoint provenance and training progress
         run: |
@@ -120,7 +145,7 @@ jobs:
           checkpoint = torch.load(root / "latest_checkpoint.pt", map_location="cpu", weights_only=False)
           assert checkpoint.get("initialization") == "random"
           assert checkpoint.get("pretrained_source") is None
-          assert int(checkpoint.get("step", 0)) >= 3000
+          assert int(checkpoint.get("step", 0)) > 0
           log = [json.loads(line) for line in (root / "training_log.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
           assert log, "training log is empty"
           assert all("train" in row and "validation" in row for row in log)
@@ -131,6 +156,7 @@ jobs:
               "pretrained_source": checkpoint["pretrained_source"],
               "metrics": checkpoint.get("metrics"),
               "log_records": len(log),
+              "manifest_status": json.loads((root / "manifest.json").read_text(encoding="utf-8")).get("status"),
           }, ensure_ascii=False, indent=2))
           PY
       - name: Verify the scratch checkpoint can produce a chat turn
